@@ -1,0 +1,23 @@
+{
+  "name": "openply-vscode",
+  "displayName": "openPly",
+  "description": "AI coding assistant — free, local-first, multi-agent",
+  "version": "0.1.0",
+  "publisher": "openply",
+  "license": "MIT",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Programming Languages", "Other"],
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "openply.start", "title": "openPly: Start in Terminal" },
+      { "command": "openply.chat", "title": "openPly: Chat" },
+      { "command": "openply.explain", "title": "openPly: Explain Selected Code" }
+    ],
+    "keybindings": [
+      { "command": "openply.chat", "key": "ctrl+shift+p ctrl+shift+o" }
+    ]
+  },
+  "repository": { "type": "git", "url": "https://github.com/openply/openply" }
+}
