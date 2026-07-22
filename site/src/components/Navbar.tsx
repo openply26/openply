@@ -5,6 +5,7 @@ const NAV_LINKS = [
   { href: '#how', label: 'How it works' },
   { href: '#models', label: 'Models' },
   { href: 'https://github.com/openply26/openply', label: 'GitHub', external: true },
+  { href: '#install', label: 'VS Code', external: false },
 ]
 
 export default function Navbar() {

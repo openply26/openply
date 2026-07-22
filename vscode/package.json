@@ -1,12 +1,14 @@
 {
   "name": "openply-vscode",
   "displayName": "openPly",
-  "description": "AI coding assistant — free, local-first, multi-agent",
+  "description": "AI coding assistant — free, local-first, multi-agent. Your code stays yours.",
   "version": "0.1.0",
-  "publisher": "openply",
+  "publisher": "openPly",
   "license": "MIT",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Programming Languages", "Other"],
+  "keywords": ["ai", "coding", "assistant", "open-source", "free", "cli"],
+  
   "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
@@ -19,5 +21,14 @@
       { "command": "openply.chat", "key": "ctrl+shift+p ctrl+shift+o" }
     ]
   },
-  "repository": { "type": "git", "url": "https://github.com/openply26/openply" }
+  "repository": { "type": "git", "url": "https://github.com/openply26/openply" },
+  "scripts": {
+    "vscode:prepublish": "npx tsc -p ./tsconfig.json",
+    "package": "npx vsce package",
+    "publish": "npx vsce publish"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.5.0"
+  }
 }
