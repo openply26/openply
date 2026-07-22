@@ -19,5 +19,5 @@
       { "command": "openply.chat", "key": "ctrl+shift+p ctrl+shift+o" }
     ]
   },
-  "repository": { "type": "git", "url": "https://github.com/openply/openply" }
+  "repository": { "type": "git", "url": "https://github.com/openply26/openply" }
 }

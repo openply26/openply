@@ -25,7 +25,7 @@ export default function Hero() {
             npm install -g openply
           </a>
           <a
-            href="https://github.com/openply/openply"
+            href="https://github.com/openply26/openply"
             target="_blank"
             rel="noopener noreferrer"
             className="flex h-[48px] items-center rounded-xl border border-[#1e293b] bg-transparent px-8 text-base font-semibold text-[#e2e8f0] transition-all duration-200 hover:border-[#22D3EE] hover:text-[#22D3EE] hover:bg-[rgba(34,211,238,0.04)] hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22D3EE]"

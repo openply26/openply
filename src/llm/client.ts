@@ -12,7 +12,7 @@ export class LLMClient {
         baseURL: 'https://openrouter.ai/api/v1',
         apiKey,
         defaultHeaders: {
-          'HTTP-Referer': 'https://openply.dev',
+          'HTTP-Referer': 'https://github.com/openply26/openply',
           'X-Title': 'openPly',
         },
       })

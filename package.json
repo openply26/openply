@@ -31,12 +31,12 @@
   "author": "openPly",
   "repository": {
     "type": "git",
-    "url": "https://github.com/openply/openply"
+    "url": "https://github.com/openply26/openply"
   },
   "bugs": {
-    "url": "https://github.com/openply/openply/issues"
+    "url": "https://github.com/openply26/openply/issues"
   },
-  "homepage": "https://openply.dev",
+  "homepage": "https://openply26.github.io/openply",
   "engines": {
     "node": ">=18.0.0"
   },
