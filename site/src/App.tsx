@@ -6,6 +6,7 @@ import HowItWorks from './components/HowItWorks'
 import Models from './components/Models'
 import Compare from './components/Compare'
 import VSCodeInstall from './components/VSCodeInstall'
+import Contact from './components/Contact'
 import CTA from './components/CTA'
 import Footer from './components/Footer'
 
@@ -21,6 +22,7 @@ export default function App() {
         <Models />
         <Compare />
         <VSCodeInstall />
+        <Contact />
         <CTA />
       </main>
       <Footer />
