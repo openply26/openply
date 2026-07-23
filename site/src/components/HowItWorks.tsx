@@ -1,8 +1,8 @@
 const STEPS = [
-  { icon: '\u{1F50D}', title: 'File Finder', desc: 'Scans your project to understand architecture and find relevant files.' },
-  { icon: '\u{1F4E4}', title: 'Planner', desc: 'Analyzes your request and creates an ordered plan of changes.' },
-  { icon: '\u{270E}', title: 'Editor', desc: 'Makes precise edits with full diff output for every change.' },
-  { icon: '\u{2705}', title: 'Reviewer', desc: 'Validates changes for bugs, edge cases, and code style before applying.' },
+  { icon: '🔍', title: 'Explore', desc: 'Search your codebase with grep, browse files in the tree view, read code in the viewer, or search the web — all from one interface.' },
+  { icon: '📋', title: 'Plan', desc: 'Switch to Plan mode for read-only analysis. The agent explores your codebase, understands architecture, and creates a strategy without making changes.' },
+  { icon: '✏️', title: 'Build', desc: 'Switch to Build mode with auto-accept for speed. The agent edits files, runs terminal commands, and creates new code — with checkpoints saved automatically.' },
+  { icon: '🎨', title: 'Design', desc: 'Launch the Design Partner with 17 modes — audit, recolor, redesign, accessibility, dark mode, motion, tokens, and more. Full design system management.' },
 ]
 
 export default function HowItWorks() {
@@ -11,7 +11,7 @@ export default function HowItWorks() {
       <div className="mx-auto max-w-[1100px] px-6">
         <h2 className="text-center text-4xl font-extrabold tracking-[-1px]">How it works</h2>
         <p className="mx-auto mt-4 mb-14 max-w-[600px] text-center text-lg text-[#94a3b8]">
-          Four specialized agents work together to understand, plan, edit, and validate your code.
+          Explore, plan, build, and design — all in your browser or terminal.
         </p>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((s, i) => (
@@ -24,6 +24,13 @@ export default function HowItWorks() {
               <p className="mt-1 text-sm text-[#94a3b8]">{s.desc}</p>
             </div>
           ))}
+        </div>
+        <div className="mt-12 text-center">
+          <div className="mx-auto inline-flex items-center gap-2 rounded-lg border border-[#1e293b] bg-[#0d0d20] px-5 py-3 font-mono text-sm">
+            <span className="text-[#64748b]">$</span>
+            <span className="text-[#22D3EE]">npm install -g openply</span>
+          </div>
+          <p className="mt-3 text-sm text-[#64748b]">Then run <code className="text-[#22D3EE]">openply</code> in terminal or open <a href="/app" className="text-[#22D3EE] underline">web app</a></p>
         </div>
       </div>
     </section>

@@ -6,7 +6,7 @@ export default function Hero() {
       <div className="mx-auto max-w-[1100px] px-6">
         <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-[rgba(34,211,238,0.2)] bg-[rgba(34,211,238,0.08)] px-4 py-1.5 text-sm font-medium text-[#22D3EE]">
           <span className="h-2 w-2 rounded-full bg-[#22D3EE]" />
-          v0.1.0 &mdash; Free &amp; open source
+          v0.2.0 &mdash; Now with Web IDE &middot; Design Partner &middot; Multi-session
         </div>
         <h1 className="text-5xl font-extrabold leading-[1.1] tracking-[-2px] md:text-7xl">
           Code with AI.<br />
@@ -15,9 +15,9 @@ export default function Hero() {
           </span>
         </h1>
         <p className="mx-auto mt-5 max-w-[640px] text-lg text-[#94a3b8] md:text-xl">
-          openPly is a free, open-source AI coding assistant that runs locally.
-          No subscription. No data collection. Just you, your terminal, and the
-          best open-source models.
+          openPly is a free, open-source AI coding assistant with a full web IDE.
+          Multi-session, multi-agent, design partner, terminal, file editor — all free.
+          No subscription. No data collection.
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-4">
           <a
