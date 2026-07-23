@@ -1,6 +1,6 @@
 import express from 'express'
 import cors from 'cors'
-import { readFileSync, existsSync, readdirSync, statSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'fs'
 import { resolve, relative, sep, normalize } from 'path'
 
 const app = express()
@@ -108,6 +108,44 @@ app.get('/api/files', (_req, res) => {
   const result: string[] = []
   walk(ROOT, '', result)
   res.json({ files: result })
+})
+
+app.post('/api/write', (req, res) => {
+  const { path, content } = req.body
+  if (!path || content === undefined) {
+    res.status(400).json({ error: 'path and content required' })
+    return
+  }
+  const normalized = normalize(path)
+  const fullPath = resolve(ROOT, normalized)
+
+  if (!fullPath.startsWith(ROOT)) {
+    res.status(403).json({ error: 'Forbidden' })
+    return
+  }
+
+  try {
+    writeFileSync(fullPath, content, 'utf-8')
+    res.json({ success: true, path })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/terminal', async (req, res) => {
+  const { command } = req.body
+  if (!command) {
+    res.status(400).json({ error: 'command required' })
+    return
+  }
+
+  try {
+    const { execSync } = await import('child_process')
+    const output = execSync(command, { cwd: ROOT, encoding: 'utf-8', timeout: 30000, maxBuffer: 1024 * 1024 })
+    res.json({ output: output.toString() })
+  } catch (err: any) {
+    res.json({ output: err.stdout?.toString() || '', error: err.stderr?.toString() || err.message })
+  }
 })
 
 app.get('/api/files/{*path}', (req, res) => {
