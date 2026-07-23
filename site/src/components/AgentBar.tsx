@@ -42,9 +42,7 @@ export default function AgentBar() {
               <button
                 key={a.id}
                 onClick={() => dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'agent', value: a.id })}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-left transition-colors ${
-                  activeSession.agent === a.id ? 'bg-[#22D3EE]/10 text-[#22D3EE]' : 'text-[#94a3b8] hover:bg-[#1a1a35] hover:text-[#e2e8f0]'
-                }`}
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-left transition-colors ${activeSession.agent === a.id ? 'bg-[#22D3EE]/10 text-[#22D3EE]' : 'text-[#94a3b8] hover:bg-[#1a1a35] hover:text-[#e2e8f0]'}`}
               >
                 <span>{a.icon}</span>
                 <div><div className="font-medium">{a.label}</div><div className="text-[10px] opacity-60">{a.desc}</div></div>
@@ -53,6 +51,19 @@ export default function AgentBar() {
           </div>
         </div>
       </div>
+
+      {/* Auto-accept / YOLO toggle */}
+      <button
+        onClick={() => dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'autoAccept', value: !activeSession.autoAccept })}
+        className={`rounded-lg px-2.5 py-1.5 text-[10px] font-medium transition-colors ${
+          activeSession.autoAccept
+            ? 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/30'
+            : 'text-[#64748b] hover:bg-[#1a1a35] border border-transparent'
+        }`}
+        title={activeSession.autoAccept ? 'Auto-accept ON — files saved without confirmation' : 'Auto-accept OFF — requires confirmation'}
+      >
+        {activeSession.autoAccept ? '⚡ YOLO' : '✓ Confirm'}
+      </button>
 
       <div className="flex-1" />
 

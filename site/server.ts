@@ -132,6 +132,61 @@ app.post('/api/write', (req, res) => {
   }
 })
 
+app.post('/api/search', async (req, res) => {
+  const { query } = req.body
+  if (!query) { res.status(400).json({ error: 'query required' }); return }
+
+  try {
+    const { execSync } = await import('child_process')
+    let results: string[] = []
+
+    // Try ripgrep first
+    try {
+      const output = execSync(`rg -l "${query.replace(/"/g, '\\"')}" --max-count 30 --type-not class --iglob '!node_modules' --iglob '!dist' --iglob '!.git'`, { cwd: ROOT, encoding: 'utf-8', timeout: 10000 })
+      results = output.trim().split('\n').filter(Boolean).slice(0, 30)
+    } catch {
+      // Fall back to findstr (Windows) or grep
+      try {
+        const cmd = process.platform === 'win32'
+          ? `findstr /M /S /C:"${query}" *.ts *.tsx *.js *.jsx *.json *.md *.css 2>nul`
+          : `grep -rl "${query}" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.json" --include="*.md" --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . 2>/dev/null | head -30`
+        const output = execSync(cmd, { cwd: ROOT, encoding: 'utf-8', timeout: 10000 })
+        results = output.trim().split('\n').filter(Boolean).slice(0, 30)
+      } catch { /* no results */ }
+    }
+
+    res.json({ results })
+  } catch (err: any) {
+    res.json({ results: [], error: err.message })
+  }
+})
+
+app.post('/api/websearch', async (req, res) => {
+  const { query } = req.body
+  if (!query) { res.status(400).json({ error: 'query required' }); return }
+
+  try {
+    const response = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
+      headers: { 'User-Agent': 'openPly/1.0' },
+    })
+    const html = await response.text()
+
+    // Simple extraction of result snippets
+    const snippets: string[] = []
+    const regex = /<a[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi
+    let match: RegExpExecArray | null
+    while ((match = regex.exec(html)) !== null && snippets.length < 5) {
+      const title = match[2].replace(/<[^>]*>/g, '').trim()
+      const snippet = match[3].replace(/<[^>]*>/g, '').trim()
+      snippets.push(`**${title}**\n${snippet}\n${match[1]}`)
+    }
+
+    res.json({ results: snippets.join('\n\n') || 'No results found.' })
+  } catch (err: any) {
+    res.json({ results: `Search failed: ${err.message}` })
+  }
+})
+
 app.post('/api/terminal', async (req, res) => {
   const { command } = req.body
   if (!command) {

@@ -9,6 +9,8 @@ import CodeView from '../components/CodeView'
 import FileEditor from '../components/FileEditor'
 import TerminalPanel from '../components/TerminalPanel'
 import ProviderConfig from '../components/ProviderConfig'
+import ToolBar from '../components/ToolBar'
+import StatusBar from '../components/StatusBar'
 
 const PANEL_TABS: { key: RightPanel; label: string; icon: string }[] = [
   { key: 'code', label: 'Code', icon: '📄' },
@@ -20,12 +22,10 @@ const PANEL_TABS: { key: RightPanel; label: string; icon: string }[] = [
 export default function AppPage() {
   const { state, dispatch, activeSession } = useStore()
 
-  // Load files on mount
   useEffect(() => {
     listFiles().then((files) => dispatch({ type: 'SET_FILES', files })).catch(() => {})
   }, [])
 
-  // Load file content when selected
   useEffect(() => {
     if (state.activeFile && state.fileContent === null) {
       readFile(state.activeFile).then((c) => dispatch({ type: 'SET_ACTIVE_FILE', path: state.activeFile, content: c })).catch(() => {})
@@ -36,14 +36,10 @@ export default function AppPage() {
 
   const renderRightPanel = () => {
     switch (state.rightPanel) {
-      case 'code':
-        return <CodeView path={state.activeFile} content={state.fileContent} onClose={() => dispatch({ type: 'SET_ACTIVE_FILE', path: null, content: null })} />
-      case 'editor':
-        return <FileEditor path={state.activeFile} content={state.fileContent} onSwitchPanel={switchPanel} />
-      case 'terminal':
-        return <TerminalPanel />
-      case 'settings':
-        return <ProviderConfig />
+      case 'code': return <CodeView path={state.activeFile} content={state.fileContent} onClose={() => dispatch({ type: 'SET_ACTIVE_FILE', path: null, content: null })} />
+      case 'editor': return <FileEditor path={state.activeFile} content={state.fileContent} onSwitchPanel={switchPanel} />
+      case 'terminal': return <TerminalPanel />
+      case 'settings': return <ProviderConfig />
     }
   }
 
@@ -67,8 +63,12 @@ export default function AppPage() {
       {/* Agent bar */}
       <AgentBar />
 
+      {/* Tool bar (search, web, todo) */}
+      <ToolBar />
+
+      {/* Main layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar: sessions */}
+        {/* Left sidebar */}
         <aside className="w-56 border-r border-[#1e293b] bg-[#0f0f24] hidden md:flex flex-col shrink-0 overflow-hidden">
           <SessionSidebar />
         </aside>
@@ -78,47 +78,35 @@ export default function AppPage() {
           <ChatPanel />
         </main>
 
-        {/* Right panel: code/editor/terminal/settings */}
+        {/* Right panel */}
         <aside className="w-96 border-l border-[#1e293b] bg-[#0f0f24] hidden lg:flex flex-col shrink-0 overflow-hidden">
-          {/* Panel tabs */}
           <div className="flex border-b border-[#1e293b] shrink-0">
             {PANEL_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => switchPanel(tab.key)}
+              <button key={tab.key} onClick={() => switchPanel(tab.key)}
                 className={`flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium transition-colors border-b-2 ${
-                  state.rightPanel === tab.key
-                    ? 'border-[#22D3EE] text-[#22D3EE] bg-[#22D3EE]/5'
-                    : 'border-transparent text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#1a1a35]'
-                }`}
-              >
+                  state.rightPanel === tab.key ? 'border-[#22D3EE] text-[#22D3EE] bg-[#22D3EE]/5' : 'border-transparent text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#1a1a35]'
+                }`}>
                 <span>{tab.icon}</span>
                 <span className="hidden xl:inline">{tab.label}</span>
               </button>
             ))}
           </div>
-          <div className="flex-1 overflow-hidden">
-            {renderRightPanel()}
-          </div>
+          <div className="flex-1 overflow-hidden">{renderRightPanel()}</div>
         </aside>
 
         {/* Mobile panel toggle */}
-        <div className="lg:hidden fixed bottom-4 right-4 flex gap-2 z-50">
+        <div className="lg:hidden fixed bottom-16 right-4 flex gap-2 z-50">
           {PANEL_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => switchPanel(tab.key)}
+            <button key={tab.key} onClick={() => switchPanel(tab.key)}
               className={`h-10 w-10 rounded-xl flex items-center justify-center text-sm transition-all shadow-lg ${
-                state.rightPanel === tab.key
-                  ? 'bg-[#22D3EE] text-[#0a0a1a]'
-                  : 'bg-[#1a1a35] text-[#64748b] border border-[#1e293b]'
-              }`}
-            >
-              {tab.icon}
-            </button>
+                state.rightPanel === tab.key ? 'bg-[#22D3EE] text-[#0a0a1a]' : 'bg-[#1a1a35] text-[#64748b] border border-[#1e293b]'
+              }`}>{tab.icon}</button>
           ))}
         </div>
       </div>
+
+      {/* Status bar */}
+      <StatusBar />
     </div>
   )
 }
