@@ -15,18 +15,18 @@ const FEATURES = [
 
 export default function Features() {
   return (
-    <section id="features" className="py-20">
-      <div className="mx-auto max-w-[1100px] px-6">
-        <h2 className="text-center text-4xl font-extrabold tracking-[-1px]">Why developers choose openPly</h2>
-        <p className="mx-auto mt-4 mb-14 max-w-[600px] text-center text-lg text-[#94a3b8]">
+    <section id="features" className="py-16 sm:py-20">
+      <div className="mx-auto max-w-[1100px] px-4 sm:px-6">
+        <h2 className="text-center text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-[-0.5px] sm:tracking-[-1px]">Why developers choose openPly</h2>
+        <p className="mx-auto mt-3 sm:mt-4 mb-10 sm:mb-14 max-w-[600px] text-center text-sm sm:text-base md:text-lg text-[#94a3b8]">
           Privacy-first, free, and built with everything you need — CLI and web app.
         </p>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
-            <div key={f.title} className="group rounded-xl border border-[#1e293b] bg-[#0f0f24] p-8 transition-all duration-200 hover:border-[#22D3EE] hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(34,211,238,0.08)]">
-              <div className="mb-4 text-3xl">{f.icon}</div>
-              <h3 className="text-lg font-bold">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-[#94a3b8]">{f.desc}</p>
+            <div key={f.title} className="group rounded-xl border border-[#1e293b] bg-[#0f0f24] p-5 sm:p-8 transition-all duration-200 hover:border-[#22D3EE] hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(34,211,238,0.08)]">
+              <div className="mb-3 sm:mb-4 text-2xl sm:text-3xl">{f.icon}</div>
+              <h3 className="text-base sm:text-lg font-bold">{f.title}</h3>
+              <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm leading-relaxed text-[#94a3b8]">{f.desc}</p>
             </div>
           ))}
         </div>

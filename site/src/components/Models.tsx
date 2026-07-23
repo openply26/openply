@@ -12,18 +12,18 @@ const MODELS = [
 
 export default function Models() {
   return (
-    <section id="models" className="py-20">
-      <div className="mx-auto max-w-[1100px] px-6">
-        <h2 className="text-center text-4xl font-extrabold tracking-[-1px]">Supported models</h2>
-        <p className="mx-auto mt-4 mb-14 max-w-[600px] text-center text-lg text-[#94a3b8]">
+    <section id="models" className="py-16 sm:py-20">
+      <div className="mx-auto max-w-[1100px] px-4 sm:px-6">
+        <h2 className="text-center text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-[-0.5px] sm:tracking-[-1px]">Supported models</h2>
+        <p className="mx-auto mt-3 sm:mt-4 mb-10 sm:mb-14 max-w-[600px] text-center text-sm sm:text-base md:text-lg text-[#94a3b8]">
           Choose from the best open-source models. No proprietary lock-in.
         </p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {MODELS.map((m) => (
-            <div key={m.name} className="rounded-lg border border-[#1e293b] bg-[#0f0f24] p-5 text-center">
-              <div className="font-mono text-sm font-semibold">{m.name}</div>
-              <div className="mt-1 text-xs text-[#64748b]">{m.provider}</div>
-              <span className={`mt-3 inline-block rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${m.tagStyle}`}>
+            <div key={m.name} className="rounded-lg border border-[#1e293b] bg-[#0f0f24] p-4 sm:p-5 text-center">
+              <div className="font-mono text-xs sm:text-sm font-semibold">{m.name}</div>
+              <div className="mt-1 text-[11px] sm:text-xs text-[#64748b]">{m.provider}</div>
+              <span className={`mt-2 sm:mt-3 inline-block rounded px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider ${m.tagStyle}`}>
                 {m.tag}
               </span>
             </div>
