@@ -1,9 +1,9 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 const NAV_LINKS = [
   { href: '#features', label: 'Features' },
   { href: '#how', label: 'How it works' },
-  { href: '#models', label: 'Models' },
   { href: 'https://github.com/openply26/openply', label: 'GitHub', external: true },
   { href: '#install', label: 'VS Code', external: false },
   { href: '#contact', label: 'Contact', external: false },
@@ -44,13 +44,13 @@ export default function Navbar() {
               <span className="absolute -bottom-0.5 left-1/2 h-[2px] w-0 -translate-x-1/2 bg-[#22D3EE] transition-all duration-200 group-hover:w-full" />
             </a>
           ))}
-          <a
-            href="#"
+          <Link
+            to="/app"
             className="flex h-[42px] items-center rounded-xl bg-linear-135 from-[#06B6D4] to-[#3B82F6] px-[22px] text-sm font-semibold text-white shadow-[0_8px_24px_rgba(59,130,246,0.25)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(59,130,246,0.35)] hover:brightness-110 active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22D3EE]"
             aria-label="Get started with openPly"
           >
-            Get started
-          </a>
+            Open Web App
+          </Link>
         </nav>
 
         {/* Mobile Hamburger */}
@@ -82,14 +82,14 @@ export default function Navbar() {
                 {link.label}
               </a>
             ))}
-            <a
-              href="#"
+            <Link
+              to="/app"
               onClick={() => setOpen(false)}
               className="mt-2 flex h-[42px] w-full items-center justify-center rounded-xl bg-linear-135 from-[#06B6D4] to-[#3B82F6] px-[22px] text-sm font-semibold text-white shadow-[0_8px_24px_rgba(59,130,246,0.25)] transition-all duration-200 hover:brightness-110"
-              aria-label="Get started with openPly"
+              aria-label="Open openPly Web App"
             >
-              Get started
-            </a>
+              Open Web App
+            </Link>
           </nav>
         </div>
       )}

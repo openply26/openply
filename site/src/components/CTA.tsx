@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 export default function CTA() {
   return (
     <section className="py-20 text-center bg-[radial-gradient(ellipse_at_50%_100%,rgba(34,211,238,0.05)_0%,transparent_60%)]">
@@ -16,12 +18,12 @@ export default function CTA() {
           Then run <code className="text-[#22D3EE]">openply</code> in your project directory
         </div>
         <div className="mt-10 flex flex-wrap justify-center gap-4">
-          <a
-            href="#"
+          <Link
+            to="/app"
             className="flex h-[48px] items-center rounded-xl bg-linear-135 from-[#06B6D4] to-[#3B82F6] px-8 text-base font-semibold text-white shadow-[0_8px_24px_rgba(59,130,246,0.25)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(59,130,246,0.35)] hover:brightness-110 active:translate-y-0"
           >
-            Get started
-          </a>
+            Open Web App
+          </Link>
           <a
             href="https://github.com/openply26/openply"
             target="_blank"

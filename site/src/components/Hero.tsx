@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 export default function Hero() {
   return (
     <section className="pt-36 pb-24 text-center bg-[radial-gradient(ellipse_at_50%_0%,rgba(34,211,238,0.06)_0%,transparent_60%)]">
@@ -24,6 +26,12 @@ export default function Hero() {
           >
             npm install -g openply
           </a>
+          <Link
+            to="/app"
+            className="flex h-[48px] items-center rounded-xl border border-[rgba(34,211,238,0.3)] bg-[rgba(34,211,238,0.06)] px-8 text-base font-semibold text-[#22D3EE] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[rgba(34,211,238,0.12)] hover:shadow-[0_8px_24px_rgba(34,211,238,0.15)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22D3EE]"
+          >
+            Open Web App &rarr;
+          </Link>
           <a
             href="https://github.com/openply26/openply"
             target="_blank"
