@@ -16,7 +16,7 @@ function streamOpenRouter(messages: any[], model: string, key: string, res: any)
     headers: {
       'Authorization': `Bearer ${key}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://openply26.netlify.app',
+      'HTTP-Referer': 'https://openply.pages.dev',
       'X-Title': 'openPly Web',
     },
     body: JSON.stringify({ model, messages, stream: true }),

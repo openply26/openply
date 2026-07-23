@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://openply26.netlify.app">Web App</a> &middot;
+  <a href="https://openply.pages.dev">Web App</a> &middot;
   <a href="#install">Install</a> &middot;
   <a href="#features">Features</a> &middot;
   <a href="#cli">CLI</a> &middot;
@@ -38,7 +38,7 @@ openply
 openply web
 ```
 
-Or just use the [hosted web app](https://openply26.netlify.app/app) — no install needed.
+Or just use the [hosted web app](https://openply.pages.dev/app) — no install needed.
 
 ## Web App
 

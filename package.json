@@ -36,7 +36,7 @@
   "bugs": {
     "url": "https://github.com/openply26/openply/issues"
   },
-  "homepage": "https://openply26.github.io/openply",
+  "homepage": "https://openply.pages.dev",
   "engines": {
     "node": ">=18.0.0"
   },

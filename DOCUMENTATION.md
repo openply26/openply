@@ -1,7 +1,7 @@
 # openPly — Full Project Documentation
 
 > **Version**: 0.1.0 | **License**: MIT | **Published**: npmjs.com/package/openply
-> **Repository**: github.com/openply26/openply | **Web App**: openply26.netlify.app
+> **Repository**: github.com/openply26/openply | **Web App**: openply.pages.dev | **API**: openply.onrender.com
 
 ---
 
@@ -493,7 +493,9 @@ npm run build          # Production build to site/dist/
 - **Build command**: `npm run build`
 - **Publish directory**: `dist/`
 - **SPA routing**: `public/_redirects` → `/* /index.html 200`
-- **Current URL**: https://openply26.netlify.app
+- **Primary URL**: https://openply.pages.dev (Cloudflare Pages)
+- **Fallback URL**: https://openply26.netlify.app (Netlify — credits reset Aug 21)
+- **Backend API**: https://openply.onrender.com (Render)
 
 ### VS Code Extension
 ```bash
