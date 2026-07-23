@@ -4,3 +4,6 @@ dist/
 *.db
 .openply/
 *.tsbuildinfo
+
+# Local Netlify folder
+.netlify
