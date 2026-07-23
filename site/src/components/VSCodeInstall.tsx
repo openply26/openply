@@ -38,13 +38,13 @@ export default function VSCodeInstall() {
             Download from GitHub
           </a>
           <a
-            href="https://marketplace.visualstudio.com/items?itemName=openPly.openply-vscode"
+            href="https://github.com/openply26/openply/releases/latest/download/openply-vscode-0.1.0.vsix"
             target="_blank"
             rel="noopener noreferrer"
             className="flex h-[48px] items-center rounded-xl bg-linear-135 from-[#06B6D4] to-[#3B82F6] px-8 text-base font-semibold text-white shadow-[0_8px_24px_rgba(59,130,246,0.25)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(59,130,246,0.35)] hover:brightness-110"
           >
             <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29L8.95 8.342 4.703 4.852a.75.75 0 0 0-.977 0L.635 7.188a.748.748 0 0 0 0 1.146l3.975 3.157-3.975 3.157a.748.748 0 0 0 0 1.146l3.091 2.336a.75.75 0 0 0 .977 0l4.247-3.49 7.555 7.541a1.494 1.494 0 0 0 1.705.29l4.94-2.377A1.5 1.5 0 0 0 24 18.22V5.78a1.5 1.5 0 0 0-.85-3.193zM17.38 17.628l-6-6 6-6v12z"/></svg>
-            Install from Marketplace
+            Download .vsix
           </a>
         </div>
 
@@ -52,20 +52,7 @@ export default function VSCodeInstall() {
         <div className="mx-auto mt-10 max-w-2xl rounded-xl border border-[#1e293b] bg-[#0d0d20] p-6 text-left font-mono text-sm">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#64748b]">Installation methods</p>
 
-          <p className="mt-4 text-[#94a3b8] text-xs uppercase tracking-wider">Method 1 — VS Code terminal</p>
-          <div className="mt-1 rounded-lg bg-[#0a0a1a] px-4 py-2">
-            <span className="text-[#64748b]">$</span>{' '}
-            <span className="text-[#22D3EE]">ext install openPly.openply-vscode</span>
-          </div>
-
-          <p className="mt-4 text-[#94a3b8] text-xs uppercase tracking-wider">Method 2 — Quick open (Ctrl+P)</p>
-          <div className="mt-1 rounded-lg bg-[#0a0a1a] px-4 py-2">
-            <span className="text-[#64748b]">$</span>{' '}
-            <span className="text-[#e2e8f0]">ext install </span>
-            <span className="text-[#f59e0b]">openPly.openply-vscode</span>
-          </div>
-
-          <p className="mt-4 text-[#94a3b8] text-xs uppercase tracking-wider">Method 3 — Manual .vsix</p>
+          <p className="mt-4 text-[#94a3b8] text-xs uppercase tracking-wider">Method 1 — Manual .vsix (recommended)</p>
           <div className="mt-1 rounded-lg bg-[#0a0a1a] px-4 py-2">
             <span className="text-[#64748b]">1.</span>{' '}
             <span className="text-[#94a3b8]">Download the .vsix from</span>{' '}
