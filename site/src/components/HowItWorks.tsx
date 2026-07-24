@@ -46,16 +46,16 @@ export default function HowItWorks() {
 
         {/* Quick start */}
         <div className="mt-12 sm:mt-18 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 max-w-[640px] mx-auto">
-          <div className="rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-5">
+          <div className="rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-5 text-center sm:text-left">
             <div className="text-[10px] font-semibold uppercase tracking-widest text-[#5a5a8a] mb-2.5 sm:mb-3">CLI</div>
-            <div className="font-mono text-[12px] sm:text-[13px] space-y-1 overflow-x-auto">
+            <div className="font-mono text-[12px] sm:text-[13px] space-y-1 overflow-x-auto inline-block text-left">
               <div className="whitespace-nowrap"><span className="text-[#5a5a8a]">$</span> <span className="text-[#00e5ff]">npm install -g openply</span></div>
               <div className="whitespace-nowrap"><span className="text-[#5a5a8a]">$</span> <span className="text-[#8888b0]">cat file.ts | openply &quot;explain&quot;</span></div>
             </div>
           </div>
-          <div className="rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-5">
+          <div className="rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-5 text-center sm:text-left">
             <div className="text-[10px] font-semibold uppercase tracking-widest text-[#5a5a8a] mb-2.5 sm:mb-3">Web App</div>
-            <div className="font-mono text-[12px] sm:text-[13px] space-y-1 overflow-x-auto">
+            <div className="font-mono text-[12px] sm:text-[13px] space-y-1 overflow-x-auto inline-block text-left">
               <div className="whitespace-nowrap"><span className="text-[#5a5a8a]">$</span> <span className="text-[#00e5ff]">openply web</span></div>
               <div className="whitespace-nowrap"><span className="text-[#5a5a8a]">or</span> <span className="text-[#8888b0]">openply.pages.dev/app</span></div>
             </div>

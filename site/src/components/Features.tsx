@@ -35,11 +35,11 @@ export default function Features() {
           {FEATURES.map((f, i) => (
             <div
               key={f.title}
-              className="group relative rounded-2xl border border-[rgba(255,255,255,0.04)] bg-[rgba(15,15,34,0.5)] p-6 sm:p-7 transition-all duration-500 hover:border-[rgba(0,229,255,0.15)] hover:bg-[rgba(15,15,34,0.8)] hover:shadow-[0_8px_40px_rgba(0,0,0,0.3)] hover:-translate-y-1"
+              className="group relative rounded-2xl border border-[rgba(255,255,255,0.04)] bg-[rgba(15,15,34,0.5)] p-6 sm:p-7 text-center sm:text-left transition-all duration-500 hover:border-[rgba(0,229,255,0.15)] hover:bg-[rgba(15,15,34,0.8)] hover:shadow-[0_8px_40px_rgba(0,0,0,0.3)] hover:-translate-y-1"
               style={{ animationDelay: `${i * 0.05}s` }}
             >
               {/* Icon with glow */}
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-lg" style={{ background: `${f.color}10`, border: `1px solid ${f.color}20` }}>
+              <div className="mx-auto sm:mx-0 mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-lg" style={{ background: `${f.color}10`, border: `1px solid ${f.color}20` }}>
                 {f.icon}
               </div>
               <h3 className="text-[15px] font-semibold text-[#e8e8f8] tracking-[-0.01em]">{f.title}</h3>
