@@ -38,7 +38,7 @@ export default function Navbar() {
             />
             <div className="absolute inset-0 rounded-full bg-[#00e5ff] opacity-0 blur-lg transition-opacity duration-300 group-hover:opacity-20" />
           </div>
-          <span className="font-mono text-lg font-bold tracking-[-0.02em]">
+          <span className="font-mono text-base sm:text-lg font-bold tracking-[-0.02em]">
             <span className="text-[#e8e8f8]">open</span>
             <span className="gradient-text">Ply</span>
           </span>
@@ -69,7 +69,7 @@ export default function Navbar() {
         {/* Mobile Hamburger */}
         <button
           onClick={() => setOpen(!open)}
-          className="lg:hidden flex flex-col gap-[5px] p-2 -mr-2"
+          className="lg:hidden flex flex-col gap-[5px] p-2.5 -mr-2"
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
         >

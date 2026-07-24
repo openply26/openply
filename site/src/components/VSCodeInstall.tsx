@@ -9,7 +9,7 @@ export default function VSCodeInstall() {
           <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,229,255,0.12)] bg-[rgba(0,229,255,0.04)] px-3.5 py-1 text-xs font-medium text-[#00e5ff] mb-5">
             VS Code Extension
           </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
+          <h2 className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
             Code in your editor
           </h2>
           <p className="mx-auto mt-4 max-w-[520px] text-base sm:text-lg text-[#5a5a8a] leading-relaxed">

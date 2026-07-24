@@ -5,7 +5,7 @@ export default function Contact() {
         <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3.5 py-1 text-xs font-medium text-[#8888b0] mb-5">
           Contact
         </div>
-        <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
+        <h2 className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
           Get in touch
         </h2>
         <p className="mx-auto mt-3 sm:mt-4 max-w-[420px] text-sm sm:text-lg text-[#5a5a8a]">

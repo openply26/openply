@@ -9,7 +9,8 @@ export default function Hero() {
 
       <div className="relative mx-auto max-w-[1100px] px-5 sm:px-8">
         {/* Badge */}
-        <div className="mx-auto mb-8 sm:mb-10 inline-flex flex-wrap justify-center items-center gap-2 sm:gap-2.5 rounded-full border border-[rgba(0,229,255,0.15)] bg-[rgba(0,229,255,0.05)] px-3 sm:px-5 py-1.5 text-[11px] sm:text-sm font-medium text-[#00e5ff] animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="text-center mb-8 sm:mb-10">
+          <div className="inline-flex flex-wrap justify-center items-center gap-2 sm:gap-2.5 rounded-full border border-[rgba(0,229,255,0.15)] bg-[rgba(0,229,255,0.05)] px-3 sm:px-5 py-1.5 text-[11px] sm:text-sm font-medium text-[#00e5ff] animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00e5ff] opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-[#00e5ff]" />
@@ -21,6 +22,7 @@ export default function Hero() {
           <span className="hidden sm:inline">Plugins</span>
           <span className="hidden sm:inline text-[#5a5a8a]">&middot;</span>
           <span className="hidden sm:inline">Collaborative</span>
+          </div>
         </div>
 
         {/* Headline — dramatic size, tight tracking */}

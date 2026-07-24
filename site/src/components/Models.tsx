@@ -21,7 +21,7 @@ export default function Models() {
           <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(92,124,250,0.12)] bg-[rgba(92,124,250,0.04)] px-3.5 py-1 text-xs font-medium text-[#5c7cfa] mb-4 sm:mb-5">
             Models
           </div>
-          <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
+          <h2 className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
             Supported models
           </h2>
           <p className="mx-auto mt-3 sm:mt-4 max-w-[520px] text-sm sm:text-lg text-[#5a5a8a] leading-relaxed">

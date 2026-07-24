@@ -9,7 +9,7 @@ export default function MCPServer() {
               <span className="h-1.5 w-1.5 rounded-full bg-[#9775fa]" />
               New in v0.3.0
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
+            <h2 className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
               MCP Server
             </h2>
             <p className="mt-4 text-base sm:text-lg text-[#5a5a8a] leading-relaxed max-w-[480px]">

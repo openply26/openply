@@ -4,10 +4,10 @@ export default function CTA() {
   return (
     <section className="relative py-20 sm:py-28 overflow-hidden">
       {/* Ambient glow */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[radial-gradient(ellipse,rgba(0,229,255,0.04)_0%,transparent_70%)] pointer-events-none" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[400px] sm:w-[800px] h-[200px] sm:h-[400px] bg-[radial-gradient(ellipse,rgba(0,229,255,0.04)_0%,transparent_70%)] pointer-events-none" />
 
       <div className="relative mx-auto max-w-[1100px] px-5 sm:px-8 text-center">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
+        <h2 className="text-[1.65rem] sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
           Start coding with AI.
           <br />
           <span className="gradient-text">For free. Forever.</span>

@@ -27,22 +27,22 @@ interface Props {
 
 export default function DesignPartner({ onSelectMode, onClose }: Props) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a1a]/80 backdrop-blur-sm">
-      <div className="w-[640px] max-h-[80vh] rounded-2xl border border-[#1e293b] bg-[#0d0d20] shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between border-b border-[#1e293b] px-5 py-3">
-          <h2 className="text-sm font-semibold text-[#e2e8f0]">🎨 Design Partner — 17 modes</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a1a]/80 backdrop-blur-sm p-4">
+      <div className="w-full max-w-[640px] max-h-[80vh] rounded-xl sm:rounded-2xl border border-[#1e293b] bg-[#0d0d20] shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between border-b border-[#1e293b] px-4 sm:px-5 py-3">
+          <h2 className="text-xs sm:text-sm font-semibold text-[#e2e8f0]">🎨 Design Partner — 17 modes</h2>
           <button onClick={onClose} className="text-lg text-[#64748b] hover:text-[#e2e8f0]">&times;</button>
         </div>
-        <div className="p-4 grid grid-cols-2 gap-2 overflow-y-auto max-h-[60vh]">
+        <div className="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-y-auto max-h-[60vh]">
           {DESIGN_MODES.map((mode) => (
             <button
               key={mode.id}
               onClick={() => { onSelectMode(mode.id); onClose() }}
-              className="flex items-start gap-3 rounded-xl border border-[#1e293b] bg-[#0f0f24] p-3 text-left transition-all hover:border-[#22D3EE]/30 hover:bg-[#1a1a35] group"
+              className="flex items-start gap-2.5 sm:gap-3 rounded-xl border border-[#1e293b] bg-[#0f0f24] p-3 text-left transition-all hover:border-[#22D3EE]/30 hover:bg-[#1a1a35] group"
             >
               <span className="text-lg mt-0.5">{mode.icon}</span>
               <div>
-                <div className="text-xs font-semibold text-[#e2e8f0] group-hover:text-[#22D3EE] transition-colors">{mode.label}</div>
+                <div className="text-[11px] sm:text-xs font-semibold text-[#e2e8f0] group-hover:text-[#22D3EE] transition-colors">{mode.label}</div>
                 <div className="text-[10px] text-[#64748b] mt-0.5">{mode.desc}</div>
               </div>
             </button>

@@ -44,7 +44,7 @@ export default function Plugins() {
               <span className="h-1.5 w-1.5 rounded-full bg-[#00e5ff]" />
               New in v0.3.0
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
+            <h2 className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
               Plugin system
             </h2>
             <p className="mt-4 text-base sm:text-lg text-[#5a5a8a] leading-relaxed max-w-[480px]">
