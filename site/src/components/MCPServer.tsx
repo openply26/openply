@@ -4,7 +4,7 @@ export default function MCPServer() {
       <div className="mx-auto max-w-[1100px] px-5 sm:px-8">
         <div className="grid gap-10 sm:gap-14 lg:grid-cols-2 items-center">
           {/* Left: content */}
-          <div>
+          <div className="text-center sm:text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(151,117,250,0.15)] bg-[rgba(151,117,250,0.05)] px-3.5 py-1 text-xs font-medium text-[#9775fa] mb-5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#9775fa]" />
               New in v0.3.0
@@ -12,7 +12,7 @@ export default function MCPServer() {
             <h2 className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
               MCP Server
             </h2>
-            <p className="mt-4 text-base sm:text-lg text-[#5a5a8a] leading-relaxed max-w-[480px]">
+            <p className="mx-auto sm:mx-0 mt-4 text-base sm:text-lg text-[#5a5a8a] leading-relaxed max-w-[34ch] sm:max-w-[480px]">
               Use openPly agents as tools in Claude Desktop, Cursor, Windsurf, and other MCP clients.
               Your multi-agent system becomes available to any AI assistant.
             </p>

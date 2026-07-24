@@ -39,7 +39,7 @@ export default function Plugins() {
           </div>
 
           {/* Right: content */}
-          <div className="order-1 lg:order-2">
+          <div className="order-1 lg:order-2 text-center sm:text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,229,255,0.15)] bg-[rgba(0,229,255,0.05)] px-3.5 py-1 text-xs font-medium text-[#00e5ff] mb-5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#00e5ff]" />
               New in v0.3.0
@@ -47,7 +47,7 @@ export default function Plugins() {
             <h2 className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
               Plugin system
             </h2>
-            <p className="mt-4 text-base sm:text-lg text-[#5a5a8a] leading-relaxed max-w-[480px]">
+            <p className="mx-auto sm:mx-0 mt-4 text-base sm:text-lg text-[#5a5a8a] leading-relaxed max-w-[34ch] sm:max-w-[480px]">
               Extend openPly with npm plugins. Add custom agents, tools, and lifecycle hooks.
               Discovered from <code className="text-[#00e5ff] text-[13px]">.openply/plugins/</code> or installed via npm.
             </p>

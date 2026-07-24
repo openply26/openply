@@ -61,9 +61,9 @@ export default function VSCodeInstall() {
         </div>
 
         {/* Code actions */}
-        <div className="mx-auto mt-8 sm:mt-10 max-w-[560px] rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-6">
+        <div className="mx-auto mt-8 sm:mt-10 max-w-sm sm:max-w-[560px] text-center sm:text-left rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-6">
           <div className="text-[10px] font-semibold uppercase tracking-widest text-[#5a5a8a] mb-3 sm:mb-4">Right-click code for</div>
-          <div className="grid gap-2 sm:gap-2.5 grid-cols-1 sm:grid-cols-2">
+          <div className="flex flex-col items-center sm:grid sm:items-start sm:grid-cols-1 lg:grid-cols-2 gap-2.5 sm:gap-2.5">
             {[
               'Explain this code',
               'Refactor this code',
@@ -72,7 +72,7 @@ export default function VSCodeInstall() {
               'Toggle Plan/Build',
               'Select model',
             ].map((action) => (
-              <div key={action} className="flex items-center gap-2.5 text-[13px] text-[#8888b0]">
+              <div key={action} className="flex items-center justify-center sm:justify-start gap-2.5 text-[13px] text-[#8888b0]">
                 <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[rgba(0,229,255,0.08)] text-[9px] text-[#00e5ff]">→</span>
                 {action}
               </div>
