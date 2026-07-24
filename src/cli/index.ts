@@ -19,7 +19,7 @@ function readStdinSync(): string {
   const fd = fs.openSync('/dev/stdin', 'r')
   const buf = Buffer.alloc(65536)
   let n: number
-  while ((n = fs.readSync(fd, buf, 0, buf.length)) > 0) {
+  while ((n = fs.readSync(fd, buf, 0, buf.length, null)) > 0) {
     chunks.push(buf.subarray(0, n))
   }
   fs.closeSync(fd)
@@ -128,7 +128,8 @@ program
       process.exit(1)
     }
     const config = getConfig()
-    await startRepl(config, undefined, session)
+    const prompt = session.messages.find(m => m.role === 'user')?.content
+    await startRepl(config, prompt)
   })
 
 program
