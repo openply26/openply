@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@openply/core": "workspace:*"
+    "@openply/core": "*"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
@@ -22,3 +22,4 @@
   },
   "license": "MIT"
 }
+
