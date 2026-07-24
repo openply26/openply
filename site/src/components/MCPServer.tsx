@@ -18,7 +18,7 @@ export default function MCPServer() {
             </p>
 
             {/* Tool list */}
-            <div className="mt-8 space-y-3">
+            <div className="mt-6 sm:mt-8 space-y-2.5 sm:space-y-3">
               {[
                 { name: 'openply_chat', desc: 'Send coding tasks to the multi-agent system', color: '#9775fa' },
                 { name: 'openply_read_file', desc: 'Read files from your project', color: '#5c7cfa' },
@@ -26,11 +26,11 @@ export default function MCPServer() {
                 { name: 'openply_run_command', desc: 'Execute shell commands safely', color: '#51cf66' },
                 { name: 'openply_agents', desc: 'List available agents and capabilities', color: '#fcc419' },
               ].map((item) => (
-                <div key={item.name} className="flex items-center gap-3.5 group">
-                  <code className="shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-mono font-medium" style={{ color: item.color, background: `${item.color}10`, border: `1px solid ${item.color}15` }}>
+                <div key={item.name} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3.5 group">
+                  <code className="shrink-0 rounded-lg px-2.5 py-1 text-[10px] sm:text-[11px] font-mono font-medium self-start" style={{ color: item.color, background: `${item.color}10`, border: `1px solid ${item.color}15` }}>
                     {item.name}
                   </code>
-                  <span className="text-[13px] text-[#5a5a8a] group-hover:text-[#8888b0] transition-colors">{item.desc}</span>
+                  <span className="text-[12px] sm:text-[13px] text-[#5a5a8a] group-hover:text-[#8888b0] transition-colors">{item.desc}</span>
                 </div>
               ))}
             </div>
@@ -39,16 +39,16 @@ export default function MCPServer() {
           {/* Right: code block */}
           <div className="relative rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(10,10,28,0.8)] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
             {/* Title bar */}
-            <div className="flex items-center gap-2 border-b border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
+            <div className="flex items-center gap-2 border-b border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.02)] px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="flex gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57] opacity-60" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e] opacity-60" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#28c840] opacity-60" />
               </div>
-              <span className="ml-2 font-mono text-[11px] text-[#5a5a8a]">claude_desktop_config.json</span>
+              <span className="ml-2 font-mono text-[10px] sm:text-[11px] text-[#5a5a8a] truncate">claude_desktop_config.json</span>
             </div>
 
-            <pre className="p-5 sm:p-6 font-mono text-[12px] sm:text-[13px] leading-[1.8] overflow-x-auto">
+            <pre className="p-4 sm:p-6 font-mono text-[11px] sm:text-[13px] leading-[1.7] sm:leading-[1.8] overflow-x-auto">
               <code>
                 <span className="text-[#9775fa]">{'{'}</span>{'\n'}
                 <span className="text-[#8888b0]">{'  "mcpServers": {'}</span>{'\n'}

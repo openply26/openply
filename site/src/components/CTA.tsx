@@ -17,7 +17,7 @@ export default function CTA() {
         </p>
 
         {/* Install command */}
-        <div className="mx-auto mt-8 inline-flex items-center gap-3 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(10,10,28,0.8)] px-6 sm:px-8 py-3.5 font-mono text-sm sm:text-base overflow-x-auto max-w-full">
+        <div className="mx-auto mt-8 inline-flex items-center gap-2.5 sm:gap-3 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(10,10,28,0.8)] px-4 sm:px-8 py-3 sm:py-3.5 font-mono text-[13px] sm:text-base overflow-x-auto max-w-full">
           <span className="text-[#5a5a8a]">$</span>
           <span className="text-[#00e5ff] whitespace-nowrap">npm install -g openply</span>
         </div>
@@ -39,10 +39,10 @@ export default function CTA() {
         </div>
 
         {/* CTAs */}
-        <div className="mt-10 flex flex-wrap justify-center gap-4">
+        <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
           <Link
             to="/app"
-            className="group relative flex h-[52px] sm:h-[56px] items-center rounded-2xl bg-gradient-to-r from-[#00e5ff] to-[#5c7cfa] px-8 sm:px-10 text-sm sm:text-base font-semibold text-[#06060e] transition-all duration-300 hover:shadow-[0_8px_40px_rgba(0,229,255,0.25)] hover:scale-[1.02] active:scale-[0.98]"
+            className="group relative flex h-[48px] sm:h-[56px] items-center justify-center rounded-2xl bg-gradient-to-r from-[#00e5ff] to-[#5c7cfa] px-6 sm:px-10 text-[13px] sm:text-base font-semibold text-[#06060e] transition-all duration-300 hover:shadow-[0_8px_40px_rgba(0,229,255,0.25)] hover:scale-[1.02] active:scale-[0.98]"
           >
             Open Web App
             <svg className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
@@ -51,7 +51,7 @@ export default function CTA() {
             href="https://github.com/openply26/openply"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-[52px] sm:h-[56px] items-center rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(10,10,28,0.6)] px-8 sm:px-10 text-sm sm:text-base font-semibold text-[#8888b0] transition-all duration-300 hover:border-[rgba(255,255,255,0.12)] hover:text-[#c8c8e0] hover:bg-[rgba(10,10,28,0.8)] hover:scale-[1.02] active:scale-[0.98]"
+            className="flex h-[48px] sm:h-[56px] items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(10,10,28,0.6)] px-6 sm:px-10 text-[13px] sm:text-base font-semibold text-[#8888b0] transition-all duration-300 hover:border-[rgba(255,255,255,0.12)] hover:text-[#c8c8e0] hover:bg-[rgba(10,10,28,0.8)] hover:scale-[1.02] active:scale-[0.98]"
           >
             GitHub
             <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>

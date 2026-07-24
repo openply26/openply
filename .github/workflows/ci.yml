@@ -33,7 +33,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: cli-dist
-          path: dist/
+          path: packages/cli/dist/
 
   build-web:
     runs-on: ubuntu-latest
@@ -66,7 +66,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: cli-dist
-          path: dist/
-      - run: node dist/cli/index.js --version
-      - run: node dist/cli/index.js agents
-      - run: node dist/cli/index.js config --show-models
+          path: packages/cli/dist/
+      - run: npm ci --include=dev
+      - run: node packages/cli/dist/cli/index.js --version
+      - run: node packages/cli/dist/cli/index.js agents
+      - run: node packages/cli/dist/cli/index.js config --show-models

@@ -80,17 +80,18 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Menu */}
-      <div className={`lg:hidden overflow-hidden transition-all duration-400 ${open ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+      <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="border-t border-[rgba(255,255,255,0.04)] bg-[#06060e]/95 backdrop-blur-2xl">
-          <nav className="flex flex-col gap-1 px-5 py-5" aria-label="Mobile navigation">
-            {NAV_LINKS.map((link) => (
+          <nav className="flex flex-col gap-1 px-4 py-4" aria-label="Mobile navigation">
+            {NAV_LINKS.map((link, i) => (
               <a
                 key={link.label}
                 href={link.href}
                 target={link.external ? '_blank' : undefined}
                 rel={link.external ? 'noopener noreferrer' : undefined}
                 onClick={() => setOpen(false)}
-                className="rounded-xl px-4 py-3 text-sm font-medium text-[#8888b0] transition-all duration-200 hover:bg-[rgba(255,255,255,0.04)] hover:text-[#c8c8e0]"
+                className="rounded-xl px-4 py-3.5 text-[15px] font-medium text-[#8888b0] transition-all duration-200 hover:bg-[rgba(255,255,255,0.04)] hover:text-[#c8c8e0] active:bg-[rgba(255,255,255,0.06)]"
+                style={{ transitionDelay: open ? `${i * 30}ms` : '0ms' }}
               >
                 {link.label}
               </a>
@@ -98,7 +99,7 @@ export default function Navbar() {
             <Link
               to="/app"
               onClick={() => setOpen(false)}
-              className="mt-3 flex h-[48px] w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#00e5ff] to-[#5c7cfa] text-sm font-semibold text-[#06060e] transition-all duration-200 hover:brightness-110"
+              className="mt-3 flex h-[50px] w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#00e5ff] to-[#5c7cfa] text-[15px] font-semibold text-[#06060e] transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
             >
               Open Web App
             </Link>

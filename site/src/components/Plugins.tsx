@@ -8,16 +8,16 @@ export default function Plugins() {
           {/* Left: code block */}
           <div className="order-2 lg:order-1 relative rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(10,10,28,0.8)] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
             {/* Title bar */}
-            <div className="flex items-center gap-2 border-b border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
+            <div className="flex items-center gap-2 border-b border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.02)] px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="flex gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57] opacity-60" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e] opacity-60" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#28c840] opacity-60" />
               </div>
-              <span className="ml-2 font-mono text-[11px] text-[#5a5a8a]">.openply/plugins/docker/index.js</span>
+              <span className="ml-2 font-mono text-[10px] sm:text-[11px] text-[#5a5a8a] truncate">.openply/plugins/docker/index.js</span>
             </div>
 
-            <pre className="p-5 sm:p-6 font-mono text-[12px] sm:text-[13px] leading-[1.8] overflow-x-auto">
+            <pre className="p-4 sm:p-6 font-mono text-[11px] sm:text-[13px] leading-[1.7] sm:leading-[1.8] overflow-x-auto">
               <code>
                 <span className="text-[#5a5a8a]">{'// openPly plugin'}</span>{'\n'}
                 <span className="text-[#c8c8e0]">module.</span><span className="text-[#00e5ff]">exports</span><span className="text-[#c8c8e0]"> = {'{'}</span>{'\n'}
@@ -53,15 +53,15 @@ export default function Plugins() {
             </p>
 
             {/* Commands */}
-            <div className="mt-8 space-y-3">
+            <div className="mt-6 sm:mt-8 space-y-2.5 sm:space-y-3">
               {[
                 { cmd: 'openply plugin create docker', desc: 'Scaffold a new plugin', color: '#00e5ff' },
                 { cmd: 'openply plugin list', desc: 'Discover installed plugins', color: '#5c7cfa' },
                 { cmd: 'npm i openply-plugin-docker', desc: 'Install an npm plugin', color: '#51cf66' },
               ].map((item) => (
-                <div key={item.cmd} className="rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] px-5 py-4 transition-all duration-300 hover:border-[rgba(255,255,255,0.08)]">
-                  <code className="text-[13px] font-mono" style={{ color: item.color }}>{item.cmd}</code>
-                  <div className="mt-1 text-[12px] text-[#5a5a8a]">{item.desc}</div>
+                <div key={item.cmd} className="rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] px-4 sm:px-5 py-3 sm:py-4 transition-all duration-300 hover:border-[rgba(255,255,255,0.08)]">
+                  <code className="text-[12px] sm:text-[13px] font-mono break-all" style={{ color: item.color }}>{item.cmd}</code>
+                  <div className="mt-1 text-[11px] sm:text-[12px] text-[#5a5a8a]">{item.desc}</div>
                 </div>
               ))}
             </div>

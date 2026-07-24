@@ -26,15 +26,15 @@ export default function HowItWorks() {
         </div>
 
         {/* Steps */}
-        <div className="grid gap-5 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((s, i) => (
-            <div key={s.title} className="group relative rounded-2xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-6 sm:p-7 text-center transition-all duration-500 hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(10,10,28,0.8)]">
+            <div key={s.title} className="group relative rounded-xl sm:rounded-2xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-5 sm:p-7 text-center transition-all duration-500 hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(10,10,28,0.8)]">
               {/* Number */}
-              <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl font-mono text-sm font-bold" style={{ color: s.color, background: `${s.color}10`, border: `1px solid ${s.color}20` }}>
+              <div className="mx-auto mb-3 sm:mb-5 flex h-10 sm:h-12 w-10 sm:w-12 items-center justify-center rounded-xl font-mono text-xs sm:text-sm font-bold" style={{ color: s.color, background: `${s.color}10`, border: `1px solid ${s.color}20` }}>
                 {s.num}
               </div>
-              <h3 className="text-base font-semibold text-[#e8e8f8] tracking-[-0.01em]">{s.title}</h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-[#5a5a8a]">{s.desc}</p>
+              <h3 className="text-[15px] sm:text-base font-semibold text-[#e8e8f8] tracking-[-0.01em]">{s.title}</h3>
+              <p className="mt-1.5 sm:mt-2 text-[12px] sm:text-[13px] leading-relaxed text-[#5a5a8a]">{s.desc}</p>
 
               {/* Connecting line (desktop only) */}
               {i < 3 && (
@@ -45,19 +45,19 @@ export default function HowItWorks() {
         </div>
 
         {/* Quick start */}
-        <div className="mt-14 sm:mt-18 grid gap-4 grid-cols-1 sm:grid-cols-2 max-w-[640px] mx-auto">
-          <div className="rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-5">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-[#5a5a8a] mb-3">CLI</div>
-            <div className="font-mono text-[13px] space-y-1">
-              <div><span className="text-[#5a5a8a]">$</span> <span className="text-[#00e5ff]">npm install -g openply</span></div>
-              <div><span className="text-[#5a5a8a]">$</span> <span className="text-[#8888b0]">cat file.ts | openply &quot;explain&quot;</span></div>
+        <div className="mt-12 sm:mt-18 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 max-w-[640px] mx-auto">
+          <div className="rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-5">
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-[#5a5a8a] mb-2.5 sm:mb-3">CLI</div>
+            <div className="font-mono text-[12px] sm:text-[13px] space-y-1 overflow-x-auto">
+              <div className="whitespace-nowrap"><span className="text-[#5a5a8a]">$</span> <span className="text-[#00e5ff]">npm install -g openply</span></div>
+              <div className="whitespace-nowrap"><span className="text-[#5a5a8a]">$</span> <span className="text-[#8888b0]">cat file.ts | openply &quot;explain&quot;</span></div>
             </div>
           </div>
-          <div className="rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-5">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-[#5a5a8a] mb-3">Web App</div>
-            <div className="font-mono text-[13px] space-y-1">
-              <div><span className="text-[#5a5a8a]">$</span> <span className="text-[#00e5ff]">openply web</span></div>
-              <div><span className="text-[#5a5a8a]">or</span> <span className="text-[#8888b0]">openply.pages.dev/app</span></div>
+          <div className="rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-5">
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-[#5a5a8a] mb-2.5 sm:mb-3">Web App</div>
+            <div className="font-mono text-[12px] sm:text-[13px] space-y-1 overflow-x-auto">
+              <div className="whitespace-nowrap"><span className="text-[#5a5a8a]">$</span> <span className="text-[#00e5ff]">openply web</span></div>
+              <div className="whitespace-nowrap"><span className="text-[#5a5a8a]">or</span> <span className="text-[#8888b0]">openply.pages.dev/app</span></div>
             </div>
           </div>
         </div>

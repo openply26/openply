@@ -81,8 +81,14 @@ code {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 600px 400px at 50% 0%, rgba(0, 229, 255, 0.04) 0%, transparent 70%);
+  background: radial-gradient(ellipse 400px 300px at 50% 0%, rgba(0, 229, 255, 0.04) 0%, transparent 70%);
   pointer-events: none;
+}
+
+@media (min-width: 640px) {
+  .ambient-glow::before {
+    background: radial-gradient(ellipse 600px 400px at 50% 0%, rgba(0, 229, 255, 0.04) 0%, transparent 70%);
+  }
 }
 
 /* Glass card */
@@ -193,18 +199,45 @@ code {
 .spotlight::before {
   content: '';
   position: absolute;
-  top: -200px;
+  top: -100px;
   left: 50%;
   transform: translateX(-50%);
-  width: 600px;
-  height: 400px;
+  width: 300px;
+  height: 250px;
   background: radial-gradient(ellipse, rgba(0, 229, 255, 0.06) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
+}
+
+@media (min-width: 640px) {
+  .spotlight::before {
+    top: -200px;
+    width: 600px;
+    height: 400px;
+  }
 }
 
 /* Separator line with gradient */
 .separator {
   height: 1px;
   background: linear-gradient(90deg, transparent 0%, rgba(0, 229, 255, 0.15) 50%, transparent 100%);
+}
+
+/* Mobile touch improvements */
+@media (max-width: 640px) {
+  /* Ensure tap targets are at least 44px */
+  a, button {
+    min-height: 44px;
+  }
+
+  /* Smooth scroll on mobile */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent horizontal overflow */
+  body {
+    overflow-x: hidden;
+  }
 }

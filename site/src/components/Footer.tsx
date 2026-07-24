@@ -1,9 +1,9 @@
 export default function Footer() {
   return (
-    <footer className="relative border-t border-[rgba(255,255,255,0.04)] py-10 sm:py-12">
-      <div className="mx-auto max-w-[1100px] px-5 sm:px-8">
+    <footer className="relative border-t border-[rgba(255,255,255,0.04)] py-8 sm:py-12">
+      <div className="mx-auto max-w-[1100px] px-4 sm:px-8">
         {/* Nav links */}
-        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-6">
+        <div className="flex flex-wrap justify-center gap-x-4 sm:gap-x-6 gap-y-2 mb-5 sm:mb-6">
           {[
             { href: '#features', label: 'Features' },
             { href: '#how', label: 'How it works' },
@@ -17,7 +17,7 @@ export default function Footer() {
               href={link.href}
               target={link.href.startsWith('http') ? '_blank' : undefined}
               rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-              className="text-[13px] text-[#5a5a8a] transition-colors duration-200 hover:text-[#c8c8e0]"
+              className="text-[12px] sm:text-[13px] text-[#5a5a8a] transition-colors duration-200 hover:text-[#c8c8e0]"
             >
               {link.label}
             </a>
