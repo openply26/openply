@@ -1,31 +1,134 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
+import * as fs from 'fs'
+import * as path from 'path'
 import { startRepl } from './repl'
 import { getConfig, updateConfig, resetConfig } from '../storage/config'
-import { getSessions, deleteSession } from '../storage/history'
+import { getSessions, deleteSession, getSession } from '../storage/history'
 import { getAvailableModels } from '../llm/models'
 import { generateApp, startPreview } from '../web-builder/generator'
 import { LLMClient } from '../llm/client'
 import { getBuiltinAgents, formatAgentList } from '../registry/registry'
+
+const VERSION = '0.2.0'
+
+function readStdinSync(): string {
+  if (process.stdin.isTTY) return ''
+  const chunks: Buffer[] = []
+  // Synchronous read for pipe support
+  const fd = fs.openSync('/dev/stdin', 'r')
+  const buf = Buffer.alloc(65536)
+  let n: number
+  while ((n = fs.readSync(fd, buf, 0, buf.length)) > 0) {
+    chunks.push(buf.subarray(0, n))
+  }
+  fs.closeSync(fd)
+  return Buffer.concat(chunks).toString('utf-8')
+}
 
 const program = new Command()
 
 program
   .name('openply')
   .description('openPly — free, local-first AI coding assistant')
-  .version('0.1.0')
+  .version(VERSION)
   .argument('[prompt]', 'Prompt to execute (starts interactive session if empty)')
   .option('--model <model>', 'Specify model to use')
   .option('--local', 'Force local-only mode')
   .option('--no-ads', 'Disable ads')
-  .action(async (prompt: string | undefined, opts: { model?: string; local?: boolean; ads?: boolean }) => {
+  .option('--json', 'Output as JSON (for scripting)')
+  .action(async (prompt: string | undefined, opts: { model?: string; local?: boolean; ads?: boolean; json?: boolean }) => {
     const config = getConfig()
 
     if (opts.model) config.model = opts.model
     if (opts.local) config.mode = 'local'
     if (opts.ads === false) config.adEnabled = false
 
+    // Pipe support: cat file.ts | openply "explain this"
+    const pipedInput = readStdinSync()
+    if (pipedInput && prompt) {
+      prompt = `${prompt}\n\n--- Piped input ---\n${pipedInput}`
+    } else if (pipedInput && !prompt) {
+      prompt = pipedInput
+    }
+
+    if (opts.json) {
+      // Non-interactive JSON output mode
+      if (!prompt) {
+        console.error('Error: --json requires a prompt argument')
+        process.exit(1)
+      }
+      const apiKey = config.openRouterKey || process.env.OPENROUTER_API_KEY
+      if (!apiKey) {
+        console.error('Error: API key required. Run `openply config --set openRouterKey=<key>`')
+        process.exit(1)
+      }
+      const llm = new LLMClient(config.model, apiKey, { provider: 'openrouter' })
+      const { Orchestrator } = await import('../agent/orchestrator')
+      const orch = new Orchestrator(llm, {
+        cwd: process.cwd(),
+        files: [],
+        prompt,
+        history: [],
+        config,
+      })
+      await orch.init()
+      const result = await orch.run(prompt)
+      console.log(JSON.stringify({
+        success: true,
+        edits: result.edits.length,
+        review: result.review,
+        model: config.model,
+      }, null, 2))
+      process.exit(result.review?.approved ? 0 : 1)
+    }
+
     await startRepl(config, prompt)
+  })
+
+program
+  .command('exec')
+  .description('Non-interactive single-shot execution (returns exit code)')
+  .argument('<prompt>', 'Prompt to execute')
+  .option('--model <model>', 'Specify model to use')
+  .option('--local', 'Force local-only mode')
+  .action(async (prompt: string, opts: { model?: string; local?: boolean }) => {
+    const config = getConfig()
+    if (opts.model) config.model = opts.model
+    if (opts.local) config.mode = 'local'
+
+    const apiKey = config.openRouterKey || process.env.OPENROUTER_API_KEY
+    if (!apiKey) {
+      console.error('Error: API key required. Run `openply config --set openRouterKey=<key>`')
+      process.exit(1)
+    }
+
+    const llm = new LLMClient(config.model, apiKey, { provider: 'openrouter' })
+    const { Orchestrator } = await import('../agent/orchestrator')
+    const orch = new Orchestrator(llm, {
+      cwd: process.cwd(),
+      files: [],
+      prompt,
+      history: [],
+      config,
+    })
+    await orch.init()
+    const result = await orch.run(prompt)
+    process.exit(result.review?.approved ? 0 : 1)
+  })
+
+program
+  .command('resume')
+  .description('Resume a past session')
+  .argument('<session-id>', 'Session ID to resume')
+  .action(async (sessionId: string) => {
+    const session = getSession(sessionId)
+    if (!session) {
+      console.error(`Session ${sessionId} not found. Use 'openply history' to list sessions.`)
+      process.exit(1)
+    }
+    const config = getConfig()
+    await startRepl(config, undefined, session)
   })
 
 program
@@ -46,6 +149,10 @@ program
       getAvailableModels('full').forEach(m => console.log(`  ${m.id} — ${m.displayName}`))
       console.log('\nLimited mode models:')
       getAvailableModels('limited').forEach(m => console.log(`  ${m.id} — ${m.displayName}`))
+      console.log('\nLocal models:')
+      getAvailableModels('full').forEach(m => {
+        if (m.provider === 'ollama') console.log(`  ${m.id} — ${m.displayName}`)
+      })
       return
     }
 
@@ -64,7 +171,8 @@ program
   .command('history')
   .description('Browse past sessions')
   .option('--delete <id>', 'Delete a session')
-  .action((opts: { delete?: string }) => {
+  .option('--json', 'Output as JSON')
+  .action((opts: { delete?: string; json?: boolean }) => {
     if (opts.delete) {
       deleteSession(opts.delete)
       console.log(`Session ${opts.delete} deleted`)
@@ -74,6 +182,11 @@ program
     const sessions = getSessions()
     if (sessions.length === 0) {
       console.log('No past sessions')
+      return
+    }
+
+    if (opts.json) {
+      console.log(JSON.stringify(sessions, null, 2))
       return
     }
 
@@ -98,7 +211,7 @@ program
       return
     }
 
-    const llm = new LLMClient(config.model, apiKey)
+    const llm = new LLMClient(config.model, apiKey, { provider: 'openrouter' })
     const app = await generateApp(description, opts.stack || 'react-express', llm, process.cwd())
 
     console.log(`\nGenerated ${app.files.length} files in ${app.dir}`)

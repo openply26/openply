@@ -1,10 +1,47 @@
 export default function Footer() {
   return (
-    <footer className="border-t border-[#1e293b] py-8 sm:py-10 text-center text-xs sm:text-sm text-[#64748b]">
-      <div className="mx-auto max-w-[1100px] px-4 sm:px-6">
-        <p>openPly is MIT licensed &mdash; free for everyone, forever.</p>
-        <p className="mt-1.5 sm:mt-2">Built with &#9829; for developers who value privacy.</p>
-        <p className="mt-3 sm:mt-4"><a href="mailto:openply26@gmail.com" className="text-[#64748b] transition-colors hover:text-[#22D3EE]">openply26@gmail.com</a></p>
+    <footer className="relative border-t border-[rgba(255,255,255,0.04)] py-10 sm:py-12">
+      <div className="mx-auto max-w-[1100px] px-5 sm:px-8">
+        {/* Nav links */}
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-6">
+          {[
+            { href: '#features', label: 'Features' },
+            { href: '#how', label: 'How it works' },
+            { href: '#mcp', label: 'MCP Server' },
+            { href: '#plugins', label: 'Plugins' },
+            { href: '#install', label: 'VS Code' },
+            { href: 'https://github.com/openply26/openply', label: 'GitHub' },
+          ].map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              target={link.href.startsWith('http') ? '_blank' : undefined}
+              rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+              className="text-[13px] text-[#5a5a8a] transition-colors duration-200 hover:text-[#c8c8e0]"
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+
+        {/* Divider */}
+        <div className="separator mb-6" />
+
+        {/* Bottom */}
+        <div className="text-center">
+          <p className="text-[13px] text-[#5a5a8a]">
+            openPly v0.3.0 &mdash; MIT licensed &mdash; free for everyone, forever.
+          </p>
+          <p className="mt-1.5 text-[12px] text-[#3a3a5a]">
+            Built for developers who value privacy.
+          </p>
+          <a
+            href="mailto:openply26@gmail.com"
+            className="mt-3 inline-block text-[12px] text-[#5a5a8a] transition-colors duration-200 hover:text-[#00e5ff]"
+          >
+            openply26@gmail.com
+          </a>
+        </div>
       </div>
     </footer>
   )

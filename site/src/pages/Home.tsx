@@ -5,6 +5,8 @@ import Features from '../components/Features'
 import HowItWorks from '../components/HowItWorks'
 import Models from '../components/Models'
 import Compare from '../components/Compare'
+import MCPServer from '../components/MCPServer'
+import Plugins from '../components/Plugins'
 import VSCodeInstall from '../components/VSCodeInstall'
 import Contact from '../components/Contact'
 import CTA from '../components/CTA'
@@ -20,6 +22,8 @@ export default function Home() {
         <Features />
         <HowItWorks />
         <Models />
+        <MCPServer />
+        <Plugins />
         <Compare />
         <VSCodeInstall />
         <Contact />

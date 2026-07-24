@@ -2,7 +2,7 @@ import { createContext, useContext, useReducer, useCallback, useEffect, useRef, 
 import { sendMessage } from './api'
 import type { ChatMessage } from './api'
 
-export type RightPanel = 'code' | 'editor' | 'terminal' | 'settings'
+export type RightPanel = 'code' | 'editor' | 'git' | 'terminal' | 'settings'
 
 export interface Checkpoint {
   id: string

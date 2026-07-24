@@ -9,20 +9,25 @@ import CodeView from '../components/CodeView'
 import FileEditor from '../components/FileEditor'
 import TerminalPanel from '../components/TerminalPanel'
 import ProviderConfig from '../components/ProviderConfig'
+import { GitPanel } from '../components/GitPanel'
 import ToolBar from '../components/ToolBar'
 import StatusBar from '../components/StatusBar'
 
 const PANEL_TABS: { key: RightPanel; label: string; icon: string }[] = [
   { key: 'code', label: 'Code', icon: '📄' },
   { key: 'editor', label: 'Edit', icon: '✏️' },
+  { key: 'git', label: 'Git', icon: '🔀' },
   { key: 'terminal', label: 'Terminal', icon: '>_' },
   { key: 'settings', label: 'Settings', icon: '⚙' },
 ]
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 export default function AppPage() {
   const { state, dispatch, activeSession } = useStore()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [collabUsers, setCollabUsers] = useState<string[]>([])
 
   useEffect(() => {
     listFiles().then((files) => dispatch({ type: 'SET_FILES', files })).catch(() => {})
@@ -43,6 +48,7 @@ export default function AppPage() {
     switch (state.rightPanel) {
       case 'code': return <CodeView path={state.activeFile} content={state.fileContent} onClose={() => dispatch({ type: 'SET_ACTIVE_FILE', path: null, content: null })} />
       case 'editor': return <FileEditor path={state.activeFile} content={state.fileContent} onSwitchPanel={switchPanel} />
+      case 'git': return <GitPanel apiBase={API_BASE} />
       case 'terminal': return <TerminalPanel />
       case 'settings': return <ProviderConfig />
     }
@@ -59,12 +65,18 @@ export default function AppPage() {
           <Link to="/" className="flex items-center gap-1.5 text-xs font-mono font-bold">
             <span className="text-[#F8FAFC]">open</span>
             <span className="text-[#22D3EE]">Ply</span>
-            <span className="hidden xs:inline ml-1 rounded border border-[#1e293b] px-1 py-0.5 text-[9px] text-[#64748b]">web</span>
+            <span className="hidden xs:inline ml-1 rounded border border-[#1e293b] px-1 py-0.5 text-[9px] text-[#64748b]">v0.3.0</span>
           </Link>
         </div>
         {activeSession && (
           <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-[#64748b]">
             <span className="hidden sm:inline">{activeSession.messages.length} messages</span>
+            {collabUsers.length > 0 && (
+              <span className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
+                {collabUsers.length} online
+              </span>
+            )}
             <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: state.loading ? '#22D3EE' : '#22a34a' }} />
           </div>
         )}
@@ -81,7 +93,7 @@ export default function AppPage() {
         {sidebarOpen && (
           <div className="fixed inset-0 z-40 md:hidden">
             <div className="absolute inset-0 bg-[#0a0a1a]/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-            <div className="absolute left-0 top-0 bottom-0 w-[260px] bg-[#0f0f24] border-r border-[#1e293b] animate-in slide-in-from-left">
+            <div className="absolute left-0 top-0 bottom-0 w-[260px] bg-[#0f0f24] border-r border-[#1e293b]">
               <div className="flex items-center justify-between p-3 border-b border-[#1e293b]">
                 <span className="text-xs font-semibold text-[#64748b]">Menu</span>
                 <button onClick={() => setSidebarOpen(false)} className="text-[#64748b] hover:text-[#e2e8f0] text-lg">&times;</button>
@@ -108,7 +120,7 @@ export default function AppPage() {
           <div className="flex border-b border-[#1e293b] shrink-0 overflow-x-auto">
             {PANEL_TABS.map((tab) => (
               <button key={tab.key} onClick={() => switchPanel(tab.key)}
-                className={`flex items-center gap-1 px-2.5 sm:px-4 py-2 text-[11px] font-medium transition-colors border-b-2 shrink-0 ${
+                className={`flex items-center gap-1 px-2.5 sm:px-3 py-2 text-[11px] font-medium transition-colors border-b-2 shrink-0 ${
                   state.rightPanel === tab.key ? 'border-[#22D3EE] text-[#22D3EE] bg-[#22D3EE]/5' : 'border-transparent text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#1a1a35]'
                 }`}>
                 <span>{tab.icon}</span>
@@ -123,12 +135,12 @@ export default function AppPage() {
         {panelOpen && (
           <div className="fixed inset-0 z-40 lg:hidden">
             <div className="absolute inset-0 bg-[#0a0a1a]/60 backdrop-blur-sm" onClick={() => setPanelOpen(false)} />
-            <div className="absolute right-0 top-0 bottom-0 w-[85vw] max-w-[400px] bg-[#0f0f24] border-l border-[#1e293b] animate-in slide-in-from-right flex flex-col">
+            <div className="absolute right-0 top-0 bottom-0 w-[85vw] max-w-[400px] bg-[#0f0f24] border-l border-[#1e293b] flex flex-col">
               <div className="flex items-center justify-between border-b border-[#1e293b] shrink-0">
                 <div className="flex overflow-x-auto">
                   {PANEL_TABS.map((tab) => (
                     <button key={tab.key} onClick={() => dispatch({ type: 'SET_RIGHT_PANEL', panel: tab.key })}
-                      className={`flex items-center gap-1 px-4 py-2.5 text-xs font-medium border-b-2 shrink-0 ${
+                      className={`flex items-center gap-1 px-3 py-2.5 text-xs font-medium border-b-2 shrink-0 ${
                         state.rightPanel === tab.key ? 'border-[#22D3EE] text-[#22D3EE] bg-[#22D3EE]/5' : 'border-transparent text-[#64748b]'
                       }`}>
                       <span>{tab.icon}</span>
@@ -144,10 +156,10 @@ export default function AppPage() {
         )}
 
         {/* Mobile bottom panel toggle */}
-        <div className="lg:hidden fixed bottom-16 right-3 flex flex-col gap-2 z-30">
+        <div className="lg:hidden fixed bottom-16 right-3 flex flex-col gap-1.5 z-30">
           {PANEL_TABS.map((tab) => (
             <button key={tab.key} onClick={() => switchPanel(tab.key)}
-              className={`h-9 w-9 rounded-xl flex items-center justify-center text-sm transition-all shadow-lg ${
+              className={`h-8 w-8 rounded-lg flex items-center justify-center text-xs transition-all shadow-lg ${
                 state.rightPanel === tab.key ? 'bg-[#22D3EE] text-[#0a0a1a]' : 'bg-[#1a1a35] text-[#64748b] border border-[#1e293b]'
               }`}>{tab.icon}</button>
           ))}

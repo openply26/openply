@@ -194,9 +194,31 @@ app.post('/api/terminal', async (req, res) => {
     return
   }
 
+  // Block dangerous commands
+  const blocked = [
+    /rm\s+-rf\s+[\/~]/i,
+    /mkfs\./i,
+    /dd\s+if=/i,
+    />\s*\/dev\/sd/i,
+    /;\s*curl.*\|\s*sh/i,
+    /;\s*wget.*\|\s*sh/i,
+  ]
+  for (const pattern of blocked) {
+    if (pattern.test(command)) {
+      res.status(403).json({ error: 'Command blocked for safety', command })
+      return
+    }
+  }
+
+  // Limit command length
+  if (command.length > 10000) {
+    res.status(400).json({ error: 'Command too long (max 10KB)' })
+    return
+  }
+
   try {
     const { execSync } = await import('child_process')
-    const output = execSync(command, { cwd: ROOT, encoding: 'utf-8', timeout: 30000, maxBuffer: 1024 * 1024 })
+    const output = execSync(command, { cwd: ROOT, encoding: 'utf-8', timeout: 30000, maxBuffer: 2 * 1024 * 1024 })
     res.json({ output: output.toString() })
   } catch (err: any) {
     res.json({ output: err.stdout?.toString() || '', error: err.stderr?.toString() || err.message })
@@ -241,6 +263,70 @@ function walk(dir: string, prefix: string, result: string[]) {
     } catch { }
   }
 }
+
+// --- Health Check ---
+const startTime = Date.now()
+app.get('/api/health', (_req, res) => {
+  res.json({
+    status: 'ok',
+    version: '0.2.0',
+    uptime: Math.floor((Date.now() - startTime) / 1000),
+    root: ROOT,
+  })
+})
+
+// --- Git Status ---
+app.get('/api/git/status', (_req, res) => {
+  try {
+    const { execSync } = require('child_process')
+
+    const branch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: ROOT, encoding: 'utf-8' }).trim()
+
+    const status = execSync('git status --porcelain', { cwd: ROOT, encoding: 'utf-8' }).trim()
+    const modified: string[] = []
+    const staged: string[] = []
+    const untracked: string[] = []
+
+    for (const line of status.split('\n').filter(Boolean)) {
+      const index = line[0]
+      const worktree = line[1]
+      const file = line.slice(3)
+
+      if (index === '?' && worktree === '?') {
+        untracked.push(file)
+      } else {
+        if (index && index !== ' ' && index !== '?') staged.push(file)
+        if (worktree && worktree !== ' ' && worktree !== '?') modified.push(file)
+      }
+    }
+
+    let ahead = 0
+    let behind = 0
+    try {
+      const ab = execSync('git rev-list --left-right --count HEAD...@{upstream}', { cwd: ROOT, encoding: 'utf-8' }).trim()
+      const [a, b] = ab.split('\t').map(Number)
+      ahead = a || 0
+      behind = b || 0
+    } catch { /* no upstream */ }
+
+    res.json({ branch, modified, staged, untracked, ahead, behind })
+  } catch (err: any) {
+    res.json({ branch: null, modified: [], staged: [], untracked: [], ahead: 0, behind: 0, error: 'Not a git repo' })
+  }
+})
+
+// --- Git Diff ---
+app.get('/api/git/diff', (req, res) => {
+  try {
+    const { execSync } = require('child_process')
+    const file = req.query.file as string | undefined
+    const cmd = file ? `git diff -- "${file}"` : 'git diff'
+    const diff = execSync(cmd, { cwd: ROOT, encoding: 'utf-8', timeout: 5000 })
+    res.json({ diff })
+  } catch (err: any) {
+    res.json({ diff: '', error: err.message })
+  }
+})
 
 app.listen(PORT, () => {
   console.log(`openPly API server running on http://localhost:${PORT}`)
