@@ -68,6 +68,7 @@ jobs:
           name: cli-dist
           path: packages/cli/dist/
       - run: npm ci --include=dev
+      - run: npm run build -w packages/core
       - run: node packages/cli/dist/cli/index.js --version
       - run: node packages/cli/dist/cli/index.js agents
       - run: node packages/cli/dist/cli/index.js config --show-models

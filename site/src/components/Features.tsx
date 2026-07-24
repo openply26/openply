@@ -31,11 +31,11 @@ export default function Features() {
         </div>
 
         {/* Feature grid */}
-        <div className="grid gap-3 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 justify-items-center sm:justify-items-stretch">
           {FEATURES.map((f, i) => (
             <div
               key={f.title}
-              className="group relative rounded-2xl border border-[rgba(255,255,255,0.04)] bg-[rgba(15,15,34,0.5)] p-6 sm:p-7 text-center sm:text-left transition-all duration-500 hover:border-[rgba(0,229,255,0.15)] hover:bg-[rgba(15,15,34,0.8)] hover:shadow-[0_8px_40px_rgba(0,0,0,0.3)] hover:-translate-y-1"
+              className="group relative w-full rounded-2xl border border-[rgba(255,255,255,0.04)] bg-[rgba(15,15,34,0.5)] p-6 sm:p-7 text-center sm:text-left transition-all duration-500 hover:border-[rgba(0,229,255,0.15)] hover:bg-[rgba(15,15,34,0.8)] hover:shadow-[0_8px_40px_rgba(0,0,0,0.3)] hover:-translate-y-1"
               style={{ animationDelay: `${i * 0.05}s` }}
             >
               {/* Icon with glow */}

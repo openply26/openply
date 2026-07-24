@@ -18,7 +18,7 @@ export default function MCPServer() {
             </p>
 
             {/* Tool list */}
-            <div className="mt-6 sm:mt-8 space-y-2.5 sm:space-y-3">
+            <div className="mt-6 sm:mt-8 space-y-3 sm:space-y-3">
               {[
                 { name: 'openply_chat', desc: 'Send coding tasks to the multi-agent system', color: '#9775fa' },
                 { name: 'openply_read_file', desc: 'Read files from your project', color: '#5c7cfa' },
@@ -26,7 +26,7 @@ export default function MCPServer() {
                 { name: 'openply_run_command', desc: 'Execute shell commands safely', color: '#51cf66' },
                 { name: 'openply_agents', desc: 'List available agents and capabilities', color: '#fcc419' },
               ].map((item) => (
-                <div key={item.name} className="flex flex-col items-center sm:flex-row sm:items-center gap-1 sm:gap-3.5 group">
+                <div key={item.name} className="inline-flex flex-col items-center sm:flex sm:flex-row sm:items-center gap-1 sm:gap-3.5 group">
                   <code className="shrink-0 rounded-lg px-2.5 py-1 text-[10px] sm:text-[11px] font-mono font-medium" style={{ color: item.color, background: `${item.color}10`, border: `1px solid ${item.color}15` }}>
                     {item.name}
                   </code>
