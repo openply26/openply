@@ -27,7 +27,7 @@ jobs:
 
   deploy-web:
     runs-on: ubuntu-latest
-    needs: publish-npm
+    needs: [publish-npm]
     defaults:
       run:
         working-directory: site
@@ -49,7 +49,6 @@ jobs:
 
   build-vscode:
     runs-on: ubuntu-latest
-    needs: publish-npm
     defaults:
       run:
         working-directory: vscode
@@ -68,7 +67,7 @@ jobs:
 
   create-release:
     runs-on: ubuntu-latest
-    needs: [publish-npm, deploy-web, build-vscode]
+    needs: [deploy-web, build-vscode]
     permissions:
       contents: write
     steps:

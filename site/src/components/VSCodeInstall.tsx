@@ -50,7 +50,7 @@ export default function VSCodeInstall() {
             GitHub Releases
           </a>
           <a
-            href="https://github.com/openply26/openply/releases/latest/download/openply-vscode-0.2.0.vsix"
+            href="https://github.com/openply26/openply/releases/latest/download/openply-vscode-0.3.0.vsix"
             target="_blank"
             rel="noopener noreferrer"
             className="group flex h-[44px] sm:h-[48px] items-center justify-center gap-2 sm:gap-2.5 rounded-xl bg-gradient-to-r from-[#00e5ff] to-[#5c7cfa] px-5 sm:px-7 text-[13px] sm:text-sm font-semibold text-[#06060e] transition-all duration-300 hover:shadow-[0_4px_24px_rgba(0,229,255,0.2)] hover:scale-[1.02] active:scale-[0.98]"
