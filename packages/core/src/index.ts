@@ -46,7 +46,8 @@ export { getBuiltinAgents, formatAgentList } from './registry/registry'
 // Ad
 export { getAd } from './ad/engine'
 
-// Display
+// History
+export { createSession, getMessages, addMessage, getSessions, deleteSession, getSession } from './storage/history'
 export { info, success, warn, error, code, dim, renderAd, renderDiff } from './utils/display'
 
 // Splash

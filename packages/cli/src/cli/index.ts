@@ -31,16 +31,19 @@ function createLLM(config: ReturnType<typeof getConfig>): LLMClient {
 
 function readStdinSync(): string {
   if (process.stdin.isTTY) return ''
-  const chunks: Buffer[] = []
-  // Synchronous read for pipe support
-  const fd = fs.openSync('/dev/stdin', 'r')
-  const buf = Buffer.alloc(65536)
-  let n: number
-  while ((n = fs.readSync(fd, buf, 0, buf.length)) > 0) {
-    chunks.push(buf.subarray(0, n))
+  try {
+    const chunks: Buffer[] = []
+    const fd = fs.openSync('/dev/stdin', 'r')
+    const buf = Buffer.alloc(65536)
+    let n: number
+    while ((n = fs.readSync(fd, buf, 0, buf.length)) > 0) {
+      chunks.push(buf.subarray(0, n))
+    }
+    fs.closeSync(fd)
+    return Buffer.concat(chunks).toString('utf-8')
+  } catch {
+    return ''
   }
-  fs.closeSync(fd)
-  return Buffer.concat(chunks).toString('utf-8')
 }
 
 const program = new Command()

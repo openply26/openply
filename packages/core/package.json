@@ -7,7 +7,7 @@
   "types": "./dist/index.d.ts",
   "files": ["dist"],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --outDir dist",
+    "build": "tsup src/index.ts --format cjs,esm --dts --outDir dist --external better-sqlite3",
     "dev": "tsup src/index.ts --format cjs,esm --dts --outDir dist --watch",
     "typecheck": "tsc --noEmit"
   },

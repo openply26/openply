@@ -1,0 +1,23 @@
+
+> @openply/core@0.3.0 build
+> tsup src/index.ts --format cjs,esm --dts --outDir dist
+
+[34mCLI[39m Building entry: src/index.ts
+[34mCLI[39m Using tsconfig: ..\..\tsconfig.json
+[34mCLI[39m tsup v8.5.1
+[34mCLI[39m Target: es2022
+[34mCJS[39m Build start
+[34mESM[39m Build start
+[32mESM[39m [1mdist\index.mjs [22m[32m779.19 KB[39m
+[32mESM[39m ⚡️ Build success in 372ms
+[32mCJS[39m [1mdist\index.js [22m[32m782.56 KB[39m
+[32mCJS[39m ⚡️ Build success in 374ms
+[34mDTS[39m Build start
+[32mDTS[39m ⚡️ Build success in 3526ms
+[32mDTS[39m [1mdist\index.d.ts  [22m[32m10.73 KB[39m
+[32mDTS[39m [1mdist\index.d.mts [22m[32m10.73 KB[39m
+npm notice
+npm notice New major version of npm available! 10.9.3 -> 12.0.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.1
+npm notice To update run: npm install -g npm@12.0.1
+npm notice
