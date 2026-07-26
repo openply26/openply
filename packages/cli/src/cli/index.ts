@@ -7,7 +7,7 @@ import { getConfig, updateConfig, resetConfig } from '../storage/config'
 import { getSessions, deleteSession, getSession } from '../storage/history'
 import { getAvailableModels, generateApp, startPreview, LLMClient, getBuiltinAgents, formatAgentList, Orchestrator } from '@openply/core'
 
-const VERSION = '0.2.0'
+const VERSION = '0.3.0'
 
 function createLLM(config: ReturnType<typeof getConfig>): LLMClient {
   if (config.mode === 'local') {
