@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+const API_BASE = import.meta.env.VITE_API_URL || ''
 
 export interface ChatMessage {
   id: string
@@ -17,7 +17,7 @@ export async function sendMessage(
   onDone: () => void,
   onError: (err: string) => void,
 ): Promise<void> {
-  const res = await fetch(`${API_BASE}/chat`, {
+  const res = await fetch(`${API_BASE}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt, history, model, apiKey }),
@@ -62,7 +62,7 @@ export function clearFileCache() { cachedFiles = null }
 
 export async function listFiles(): Promise<string[]> {
   if (cachedFiles) return cachedFiles
-  const res = await fetch(`${API_BASE}/files`)
+  const res = await fetch(`${API_BASE}/api/files`)
   if (!res.ok) return []
   const data: { files?: string[] } = await res.json()
   cachedFiles = data.files || []
@@ -70,7 +70,7 @@ export async function listFiles(): Promise<string[]> {
 }
 
 export async function readFile(path: string): Promise<string> {
-  const res = await fetch(`${API_BASE}/files/${encodeURIComponent(path)}`)
+  const res = await fetch(`${API_BASE}/api/files/${encodeURIComponent(path)}`)
   if (!res.ok) throw new Error('File not found')
   return res.text()
 }
