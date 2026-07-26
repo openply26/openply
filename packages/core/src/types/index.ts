@@ -54,13 +54,35 @@ export interface AdPlacement {
   url?: string
 }
 
+export interface AgentLLM {
+  chat(messages: Message[], onToken?: (token: string) => void): Promise<string>
+  chatSync(messages: Message[]): Promise<string>
+  getModel(): string
+}
+
+export interface AgentStepParams {
+  cwd: string
+  llm: AgentLLM
+  prompt: string
+  readFile: (path: string) => Promise<string>
+  writeFile: (path: string, content: string) => Promise<void>
+  searchFiles: (query: string) => Promise<string[]>
+  runCommand: (cmd: string) => { stdout: string; stderr: string; exitCode: number; blocked?: boolean; blockReason?: string }
+  log: (msg: string) => void
+}
+
+export interface AgentToolCall {
+  name: string
+  args: Record<string, string>
+}
+
 export interface AgentDefinition {
   id: string
   displayName: string
   model?: string
   instructionsPrompt: string
   toolNames: string[]
-  handleSteps?: () => AsyncGenerator<{ tool: string; command?: string }, void, unknown>
+  handleSteps?: (params: AgentStepParams) => AsyncGenerator<AgentToolCall, void, string>
 }
 
 export type ModelProvider = 'openrouter' | 'ollama' | 'anthropic'

@@ -9,6 +9,8 @@ export type { Provider, RetryConfig } from './llm/client'
 
 // Agent
 export { Orchestrator } from './agent/orchestrator'
+export { BUILTIN_AGENT_IMPLS } from './agent/agents'
+export type { AgentStepParams, AgentToolCall, AgentLLM } from './types'
 
 // Security
 export {

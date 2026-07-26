@@ -1,4 +1,4 @@
-import { AgentContext, AgentStep, FileEdit, Plan, ReviewResult, Message, AgentDefinition } from '../types'
+import { AgentContext, AgentStep, FileEdit, Plan, ReviewResult, Message, AgentDefinition, AgentStepParams, AgentToolCall } from '../types'
 import { LLMClient } from '../llm/client'
 import { PLANNER_PROMPT, EDITOR_PROMPT, REVIEWER_PROMPT, SYSTEM_PROMPT, buildFileContext } from '../llm/prompts'
 import { readFileContent } from '../fs/reader'
@@ -12,8 +12,11 @@ import { loadProjectAgents } from './loader'
 import { loadKnowledge } from '../knowledge/loader'
 import { getBuiltinAgents } from '../registry/registry'
 import { sanitizeUserInput } from '../security'
+import { getPluginTools, getPluginHooks } from '../plugins/index'
+import { BUILTIN_AGENT_IMPLS } from './agents'
 
-// Tool definitions for function-calling-capable models
+const CORE_TOOLS = ['read_file', 'write_file', 'edit_file', 'run_command', 'search_code', 'done']
+
 const TOOL_DEFINITIONS = [
   {
     type: 'function' as const,
@@ -22,9 +25,7 @@ const TOOL_DEFINITIONS = [
       description: 'Read the contents of a file',
       parameters: {
         type: 'object',
-        properties: {
-          path: { type: 'string', description: 'File path relative to project root' },
-        },
+        properties: { path: { type: 'string', description: 'File path relative to project root' } },
         required: ['path'],
       },
     },
@@ -67,9 +68,7 @@ const TOOL_DEFINITIONS = [
       description: 'Execute a shell command',
       parameters: {
         type: 'object',
-        properties: {
-          command: { type: 'string', description: 'Shell command to execute' },
-        },
+        properties: { command: { type: 'string', description: 'Shell command to execute' } },
         required: ['command'],
       },
     },
@@ -81,9 +80,7 @@ const TOOL_DEFINITIONS = [
       description: 'Search for files matching a glob pattern or grep regex',
       parameters: {
         type: 'object',
-        properties: {
-          query: { type: 'string', description: 'Search query (glob pattern or grep regex)' },
-        },
+        properties: { query: { type: 'string', description: 'Search query (glob pattern or grep regex)' } },
         required: ['query'],
       },
     },
@@ -95,9 +92,7 @@ const TOOL_DEFINITIONS = [
       description: 'Signal that the task is complete',
       parameters: {
         type: 'object',
-        properties: {
-          summary: { type: 'string', description: 'Summary of what was done' },
-        },
+        properties: { summary: { type: 'string', description: 'Summary of what was done' } },
         required: ['summary'],
       },
     },
@@ -124,12 +119,7 @@ export class Orchestrator {
     this.context = context
     this.knowledge = ''
     this.projectAgents = []
-    this.memory = {
-      summary: '',
-      keyDecisions: [],
-      filesModified: [],
-      errorsEncountered: [],
-    }
+    this.memory = { summary: '', keyDecisions: [], filesModified: [], errorsEncountered: [] }
     this.conversationHistory = []
   }
 
@@ -141,6 +131,12 @@ export class Orchestrator {
   async run(userPrompt: string): Promise<{ edits: FileEdit[]; review: ReviewResult | null }> {
     const cleanPrompt = sanitizeUserInput(userPrompt)
     const agentMention = this.resolveAgentMention(cleanPrompt)
+
+    // If agent has handleSteps, run the agent's generator directly
+    if (agentMention?.handleSteps) {
+      return this.runAgentSteps(agentMention, cleanPrompt)
+    }
+
     const enrichedPrompt = agentMention
       ? `[Agent: ${agentMention.displayName}]\n${agentMention.instructionsPrompt}\n\nUser request: ${cleanPrompt.replace(/@\w+/g, '').trim()}`
       : cleanPrompt
@@ -155,12 +151,10 @@ export class Orchestrator {
 
     const done = await showProcessingAnimation('agents analyzing request')
 
-    // Try function calling first, fall back to JSON plan
     let result: { edits: FileEdit[]; review: ReviewResult | null }
     try {
-      result = await this.runWithFunctionCalling(messages, done)
+      result = await this.runWithFunctionCalling(messages, agentMention, done)
     } catch {
-      // Function calling not supported by model — fall back to JSON plan
       const plan = await this.createPlan(messages)
       result = await this.executePlan(plan)
     }
@@ -168,6 +162,82 @@ export class Orchestrator {
     done()
     this.updateMemory(enrichedPrompt, result.edits)
     return result
+  }
+
+  private async runAgentSteps(
+    agent: AgentDefinition,
+    prompt: string,
+  ): Promise<{ edits: FileEdit[]; review: ReviewResult | null }> {
+    info(`Running ${agent.displayName}...`)
+    const done = await showProcessingAnimation(`${agent.id} working`)
+
+    const edits: FileEdit[] = []
+
+    const params: AgentStepParams = {
+      cwd: this.context.cwd,
+      llm: {
+        chat: (msgs, onToken) => this.llm.chat(msgs, onToken),
+        chatSync: (msgs) => this.llm.chatSync(msgs),
+        getModel: () => agent.model || this.llm.getModel(),
+      },
+      prompt,
+      readFile: async (path) => readFileContent(path),
+      writeFile: async (path, content) => {
+        showEditAnimation(path)
+        await writeFileContent(path, content, { rootDir: this.context.cwd })
+        edits.push({ filePath: path, oldContent: '', newContent: content, timestamp: Date.now() })
+      },
+      searchFiles: async (query) => searchFiles(query, this.context.cwd),
+      runCommand: (cmd) => runBash(cmd, this.context.cwd),
+      log: (msg) => info(msg),
+    }
+
+    try {
+      const gen = agent.handleSteps!(params)
+      let result = ''
+      while (true) {
+        const { value, done: genDone } = await gen.next(result)
+        if (genDone) break
+
+        const toolResult = await this.executeToolCall({
+          name: value.name,
+          args: value.args as Record<string, string>,
+        })
+        edits.push(...toolResult.edits)
+        result = toolResult.output
+      }
+    } catch (err: any) {
+      warn(`Agent error: ${err.message}`)
+    }
+
+    done()
+    this.updateMemory(prompt, edits)
+
+    let review: ReviewResult | null = null
+    if (edits.length > 0) {
+      review = await this.reviewChanges(edits)
+    }
+
+    return { edits, review }
+  }
+
+  private getToolsForAgent(agentMention?: AgentDefinition | null) {
+    if (!agentMention) return TOOL_DEFINITIONS
+    const allowedTools = agentMention.toolNames || CORE_TOOLS
+    const pluginTools = getPluginTools()
+    const pluginDefs = pluginTools.map(t => ({
+      type: 'function' as const,
+      function: {
+        name: t.name,
+        description: t.description,
+        parameters: {
+          type: 'object',
+          properties: { _: { type: 'string', description: 'Tool arguments' } },
+          required: [] as string[],
+        },
+      },
+    }))
+    return [...TOOL_DEFINITIONS.filter(t => allowedTools.includes(t.function.name)), ...pluginDefs]
   }
 
   private buildSystemPrompt(agentMention?: AgentDefinition | null): string {
@@ -189,6 +259,20 @@ export class Orchestrator {
     return prompt
   }
 
+  private getLLMForAgent(agent: AgentDefinition): LLMClient {
+    if (agent.model) {
+      const config = this.context.config
+      if (agent.model.startsWith('qwen') || agent.model.startsWith('codellama') || agent.model.startsWith('deepseek-coder')) {
+        return LLMClient.createLocal('http://localhost:11434/v1', agent.model)
+      }
+      const apiKey = config.openRouterKey || process.env.OPENROUTER_API_KEY
+      if (apiKey) {
+        return new LLMClient(agent.model, apiKey, { provider: 'openrouter' })
+      }
+    }
+    return this.llm
+  }
+
   private resolveAgentMention(prompt: string): AgentDefinition | null {
     const match = prompt.match(/@(\w+)/)
     if (!match) return null
@@ -202,7 +286,8 @@ export class Orchestrator {
 
   private async runWithFunctionCalling(
     messages: Message[],
-    done: () => void
+    agentMention?: AgentDefinition | null,
+    done?: () => void,
   ): Promise<{ edits: FileEdit[]; review: ReviewResult | null }> {
     const edits: FileEdit[] = []
     const allMessages = [...messages]
@@ -210,24 +295,27 @@ export class Orchestrator {
 
     for (let i = 0; i < MAX_ITERATIONS; i++) {
       const response = await this.llm.chat(allMessages)
-
-      // Parse function calls from response
       const toolCalls = this.parseToolCalls(response)
 
       if (toolCalls.length === 0) {
-        // Model returned text instead of tool calls — treat as done
         console.log(response)
         break
       }
 
-      // Add assistant message with tool calls
       allMessages.push({ role: 'assistant', content: response })
 
       for (const call of toolCalls) {
+        if (agentMention?.toolNames && !agentMention.toolNames.includes(call.name)) {
+          allMessages.push({
+            role: 'user',
+            content: `Tool ${call.name} is not available for this agent. Allowed tools: ${agentMention.toolNames.join(', ')}`,
+          })
+          continue
+        }
+
         const result = await this.executeToolCall(call)
         edits.push(...result.edits)
 
-        // Add tool result to conversation
         allMessages.push({
           role: 'user',
           content: `Tool ${call.name} result:\n${result.output}`,
@@ -245,7 +333,6 @@ export class Orchestrator {
   private parseToolCalls(text: string): Array<{ name: string; args: Record<string, string> }> {
     const calls: Array<{ name: string; args: Record<string, string> }> = []
 
-    // Try to parse as JSON with tool_calls
     try {
       const parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
       if (parsed.tool_calls) {
@@ -256,7 +343,6 @@ export class Orchestrator {
       }
     } catch { /* not JSON */ }
 
-    // Try to find tool calls in markdown code blocks
     const toolPattern = /```tool\n(\{[\s\S]*?\})\n```/g
     let match
     while ((match = toolPattern.exec(text)) !== null) {
@@ -317,8 +403,28 @@ export class Orchestrator {
       case 'done': {
         return { edits, output: `Task complete: ${call.args.summary}` }
       }
-      default:
+      default: {
+        // Check plugin tools
+        const pluginTools = getPluginTools()
+        const pluginTool = pluginTools.find(t => t.name === call.name)
+        if (pluginTool) {
+          const pluginCtx = {
+            cwd: this.context.cwd,
+            readFile: async (path: string) => readFileContent(path),
+            writeFile: async (path: string, content: string) => {
+              await writeFileContent(path, content, { rootDir: this.context.cwd })
+            },
+            exec: async (cmd: string) => {
+              const r = runBash(cmd, this.context.cwd)
+              return r.stdout + r.stderr
+            },
+            log: (msg: string) => info(msg),
+          }
+          const output = await pluginTool.execute(call.args, pluginCtx as any)
+          return { edits, output }
+        }
         return { edits, output: `Unknown tool: ${call.name}` }
+      }
     }
   }
 
@@ -340,16 +446,11 @@ export class Orchestrator {
       }
     } catch { /* fall through */ }
 
-    return {
-      reasoning: 'Direct execution',
-      steps: [{ type: 'message', content: response }],
-    }
+    return { reasoning: 'Direct execution', steps: [{ type: 'message', content: response }] }
   }
 
   private async executePlan(plan: Plan): Promise<{ edits: FileEdit[]; review: ReviewResult | null }> {
     const edits: FileEdit[] = []
-
-    // Group independent steps for parallel execution
     const independentGroups = this.groupIndependentSteps(plan.steps)
 
     for (const group of independentGroups) {
@@ -357,7 +458,6 @@ export class Orchestrator {
         const result = await this.executeStep(group[0])
         edits.push(...result)
       } else {
-        // Parallel execution for independent steps
         const results = await Promise.all(group.map(step => this.executeStep(step)))
         for (const result of results) {
           edits.push(...result)
@@ -374,8 +474,6 @@ export class Orchestrator {
   }
 
   private groupIndependentSteps(steps: AgentStep[]): AgentStep[][] {
-    // Simple grouping: search and message steps can run in parallel,
-    // edit steps must run sequentially
     const groups: AgentStep[][] = []
     let currentGroup: AgentStep[] = []
 
@@ -485,7 +583,6 @@ export class Orchestrator {
   private updateMemory(prompt: string, edits: FileEdit[]): void {
     this.memory.filesModified.push(...edits.map(e => e.filePath))
 
-    // Update summary (simple: last 3 prompts)
     this.conversationHistory.push({ role: 'user', content: prompt })
     if (edits.length > 0) {
       this.conversationHistory.push({
@@ -494,12 +591,10 @@ export class Orchestrator {
       })
     }
 
-    // Keep conversation history manageable
     if (this.conversationHistory.length > 40) {
       this.conversationHistory = this.conversationHistory.slice(-20)
     }
 
-    // Build summary from recent history
     if (this.conversationHistory.length > 0) {
       const recent = this.conversationHistory.slice(-6)
       this.memory.summary = recent
