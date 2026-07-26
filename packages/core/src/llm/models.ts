@@ -15,6 +15,7 @@ export const LIMITED_MODELS: ModelConfig[] = [
 ]
 
 export const LOCAL_MODELS: ModelConfig[] = [
+  { id: 'qwen3.5:4b', provider: 'ollama', displayName: 'Qwen3.5 4B (Local)', contextWindow: 32768, collectsData: true },
   { id: 'deepseek-coder-v2', provider: 'ollama', displayName: 'DeepSeek Coder V2 (Local)', contextWindow: 128000, collectsData: true },
   { id: 'codellama', provider: 'ollama', displayName: 'CodeLlama (Local)', contextWindow: 16000, collectsData: true },
   { id: 'qwen2.5-coder', provider: 'ollama', displayName: 'Qwen 2.5 Coder (Local)', contextWindow: 32000, collectsData: true },

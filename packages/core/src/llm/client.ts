@@ -57,7 +57,7 @@ export class LLMClient {
     }
   }
 
-  static createLocal(baseUrl = 'http://localhost:11434/v1', model = 'deepseek-coder-v2') {
+  static createLocal(baseUrl = 'http://localhost:11434/v1', model = 'qwen3.5:4b') {
     return new LLMClient(model, undefined, { provider: 'ollama' })
   }
 

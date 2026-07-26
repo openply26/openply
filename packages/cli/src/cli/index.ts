@@ -5,9 +5,29 @@ import * as path from 'path'
 import { startRepl } from './repl'
 import { getConfig, updateConfig, resetConfig } from '../storage/config'
 import { getSessions, deleteSession, getSession } from '../storage/history'
-import { getAvailableModels, generateApp, startPreview, LLMClient, getBuiltinAgents, formatAgentList } from '@openply/core'
+import { getAvailableModels, generateApp, startPreview, LLMClient, getBuiltinAgents, formatAgentList, Orchestrator } from '@openply/core'
 
 const VERSION = '0.2.0'
+
+function createLLM(config: ReturnType<typeof getConfig>): LLMClient {
+  if (config.mode === 'local') {
+    return LLMClient.createLocal()
+  }
+  const apiKey = config.openRouterKey || process.env.OPENROUTER_API_KEY
+  if (config.mode === 'auto') {
+    try {
+      return LLMClient.createLocal()
+    } catch {}
+  }
+  if (!apiKey) {
+    console.error('Error: API key required. Run `openply config --set openRouterKey=<key>` or use --local')
+    process.exit(1)
+  }
+  return new LLMClient(config.model, apiKey, {
+    provider: 'openrouter',
+    fallbackChain: config.fallbackModels || [],
+  })
+}
 
 function readStdinSync(): string {
   if (process.stdin.isTTY) return ''
@@ -55,13 +75,7 @@ program
         console.error('Error: --json requires a prompt argument')
         process.exit(1)
       }
-      const apiKey = config.openRouterKey || process.env.OPENROUTER_API_KEY
-      if (!apiKey) {
-        console.error('Error: API key required. Run `openply config --set openRouterKey=<key>`')
-        process.exit(1)
-      }
-      const llm = new LLMClient(config.model, apiKey, { provider: 'openrouter' })
-      const { Orchestrator } = await import('@openply/core')
+      const llm = createLLM(config)
       const orch = new Orchestrator(llm, {
         cwd: process.cwd(),
         files: [],
@@ -94,14 +108,7 @@ program
     if (opts.model) config.model = opts.model
     if (opts.local) config.mode = 'local'
 
-    const apiKey = config.openRouterKey || process.env.OPENROUTER_API_KEY
-    if (!apiKey) {
-      console.error('Error: API key required. Run `openply config --set openRouterKey=<key>`')
-      process.exit(1)
-    }
-
-    const llm = new LLMClient(config.model, apiKey, { provider: 'openrouter' })
-    const { Orchestrator } = await import('@openply/core')
+    const llm = createLLM(config)
     const orch = new Orchestrator(llm, {
       cwd: process.cwd(),
       files: [],

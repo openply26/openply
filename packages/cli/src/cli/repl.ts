@@ -61,10 +61,21 @@ async function processPrompt(prompt: string, config: Config, history: Message[],
 
   let llm: LLMClient
 
-  if (config.mode === 'local') {
-    llm = LLMClient.createLocal()
-    info('Using local model...')
-  } else {
+  if (config.mode === 'local' || config.mode === 'auto') {
+    try {
+      llm = LLMClient.createLocal()
+      if (config.mode === 'local') info('Using local model...')
+    } catch {
+      if (config.mode === 'local') {
+        warn('Local model unavailable. Install Ollama: https://ollama.com')
+        history.push({ role: 'assistant', content: 'Local model unavailable.', timestamp: Date.now() })
+        return
+      }
+      // auto mode: fall through to cloud
+    }
+  }
+
+  if (!llm) {
     const apiKey = config.openRouterKey || process.env.OPENROUTER_API_KEY
     if (!apiKey) {
       warn('No API key found. Set OPENROUTER_API_KEY or use --local mode.')
@@ -72,7 +83,10 @@ async function processPrompt(prompt: string, config: Config, history: Message[],
       history.push({ role: 'assistant', content: 'No API key configured.', timestamp: Date.now() })
       return
     }
-    llm = new LLMClient(config.model, apiKey)
+    llm = new LLMClient(config.model, apiKey, {
+      provider: 'openrouter',
+      fallbackChain: config.fallbackModels || [],
+    })
   }
 
   const context = { cwd, files: await findProjectFiles(cwd), prompt, history, config }

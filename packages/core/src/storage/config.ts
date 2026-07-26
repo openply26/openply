@@ -6,11 +6,11 @@ const store = new Conf<Config>({ projectName: 'openply' })
 
 const DEFAULTS: Config = {
   model: 'deepseek/deepseek-v4-flash',
-  localModel: 'deepseek-coder-v2',
+  localModel: 'qwen3.5:4b',
   mode: 'auto',
   theme: 'dark',
   adEnabled: true,
-  fallbackModels: ['minimax/minimax-m2', 'deepseek/deepseek-v4-flash'],
+  fallbackModels: ['deepseek/deepseek-v4-flash', 'minimax/minimax-m2'],
 }
 
 export function getConfig(): Config {
