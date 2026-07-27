@@ -1,7 +1,7 @@
 import OpenAI from 'openai'
 import { ModelConfig, Message } from '../types'
 
-export type Provider = 'openrouter' | 'ollama' | 'anthropic'
+export type Provider = 'openrouter' | 'ollama' | 'anthropic' | 'groq'
 
 export interface RetryConfig {
   maxRetries: number
@@ -39,7 +39,9 @@ export class LLMClient {
           ? 'https://api.anthropic.com/v1'
           : this.provider === 'ollama'
             ? 'http://localhost:11434/v1'
-            : 'https://openrouter.ai/api/v1',
+            : this.provider === 'groq'
+              ? 'https://api.groq.com/openai/v1'
+              : 'https://openrouter.ai/api/v1',
         apiKey: this.provider === 'anthropic' ? apiKey : (this.provider === 'ollama' ? 'ollama' : apiKey),
         defaultHeaders: this.provider === 'openrouter'
           ? { 'HTTP-Referer': 'https://github.com/openply26/openply', 'X-Title': 'openPly' }
@@ -63,6 +65,10 @@ export class LLMClient {
 
   static createAnthropic(apiKey: string, model = 'claude-sonnet-4-20250514') {
     return new LLMClient(model, apiKey, { provider: 'anthropic' })
+  }
+
+  static createGroq(apiKey: string, model = 'mixtral-8x7b-32768') {
+    return new LLMClient(model, apiKey, { provider: 'groq' })
   }
 
   getModel(): string {

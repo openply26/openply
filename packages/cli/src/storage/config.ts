@@ -4,12 +4,12 @@ import { Config, encryptApiKey, decryptApiKey, auditLog } from '@openply/core'
 const store = new Conf<Config>({ projectName: 'openply' })
 
 const DEFAULTS: Config = {
-  model: 'deepseek/deepseek-v4-flash',
+  model: 'mixtral-8x7b-32768',
   localModel: 'deepseek-coder-v2',
   mode: 'auto',
   theme: 'dark',
   adEnabled: true,
-  fallbackModels: ['minimax/minimax-m2', 'deepseek/deepseek-v4-flash'],
+  fallbackModels: ['llama3-70b-8192', 'gemma2-9b-it'],
 }
 
 export function getConfig(): Config {
@@ -19,6 +19,7 @@ export function getConfig(): Config {
   if (raw.openRouterKey) raw.openRouterKey = decryptApiKey(raw.openRouterKey)
   if (raw.anthropicKey) raw.anthropicKey = decryptApiKey(raw.anthropicKey)
   if (raw.openaiKey) raw.openaiKey = decryptApiKey(raw.openaiKey)
+  if (raw.groqKey) raw.groqKey = decryptApiKey(raw.groqKey)
 
   return raw
 }
@@ -36,6 +37,7 @@ export function updateConfig(partial: Partial<Config>): Config {
   if (toStore.openRouterKey) toStore.openRouterKey = encryptApiKey(toStore.openRouterKey)
   if (toStore.anthropicKey) toStore.anthropicKey = encryptApiKey(toStore.anthropicKey)
   if (toStore.openaiKey) toStore.openaiKey = encryptApiKey(toStore.openaiKey)
+  if (toStore.groqKey) toStore.groqKey = encryptApiKey(toStore.groqKey)
 
   const updated = { ...current, ...toStore }
   store.store = updated

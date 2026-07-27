@@ -1,6 +1,14 @@
 import { ModelConfig } from '../types'
 
+export const GROQ_MODELS: ModelConfig[] = [
+  { id: 'mixtral-8x7b-32768', provider: 'groq', displayName: 'Mixtral 8x7B (Groq)', contextWindow: 32768, collectsData: false },
+  { id: 'llama3-70b-8192', provider: 'groq', displayName: 'Llama 3 70B (Groq)', contextWindow: 8192, collectsData: false },
+  { id: 'llama3-8b-8192', provider: 'groq', displayName: 'Llama 3 8B (Groq)', contextWindow: 8192, collectsData: false },
+  { id: 'gemma2-9b-it', provider: 'groq', displayName: 'Gemma 2 9B (Groq)', contextWindow: 8192, collectsData: false },
+]
+
 export const FULL_MODELS: ModelConfig[] = [
+  ...GROQ_MODELS,
   { id: 'deepseek/deepseek-v4-pro', provider: 'openrouter', displayName: 'DeepSeek V4 Pro', contextWindow: 128000, collectsData: false },
   { id: 'minimax/minimax-m2-pro', provider: 'openrouter', displayName: 'MiMo 2.5 Pro', contextWindow: 128000, collectsData: false },
   { id: 'kimi/kimi-k2.7-code', provider: 'openrouter', displayName: 'Kimi K2.7 Code', contextWindow: 128000, collectsData: false },
@@ -10,6 +18,7 @@ export const FULL_MODELS: ModelConfig[] = [
 ]
 
 export const LIMITED_MODELS: ModelConfig[] = [
+  { id: 'mixtral-8x7b-32768', provider: 'groq', displayName: 'Mixtral 8x7B (Groq)', contextWindow: 32768, collectsData: false },
   { id: 'deepseek/deepseek-v4-flash', provider: 'openrouter', displayName: 'DeepSeek V4 Flash', contextWindow: 128000, collectsData: false },
   { id: 'minimax/minimax-m2', provider: 'openrouter', displayName: 'MiMo 2.5', contextWindow: 128000, collectsData: false },
 ]

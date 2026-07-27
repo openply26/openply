@@ -7,26 +7,56 @@ import { getConfig, updateConfig, resetConfig } from '../storage/config'
 import { getSessions, deleteSession, getSession } from '../storage/history'
 import { getAvailableModels, generateApp, startPreview, LLMClient, getBuiltinAgents, formatAgentList, Orchestrator } from '@openply/core'
 
-const VERSION = '0.3.0'
+const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf-8'))
+const VERSION: string = pkg.version
+
+async function ensureKey(config: ReturnType<typeof getConfig>): Promise<void> {
+  if (config.groqKey || config.openRouterKey || process.env.GROQ_API_KEY || process.env.OPENROUTER_API_KEY) return
+  const { createInterface } = require('readline')
+  const rl = createInterface({ input: process.stdin, output: process.stdout })
+  const answer = await new Promise<string>(resolve => {
+    rl.question('\nNo API key found. Get a free Groq key at https://console.groq.com\nPaste it here (or press Enter for local mode): ', resolve)
+  })
+  rl.close()
+  if (answer.trim()) {
+    updateConfig({ groqKey: answer.trim(), mode: 'auto' })
+    config.groqKey = answer.trim()
+    console.log('Key saved! You can change it anytime with: openply config --set groqKey=<key>')
+  }
+}
 
 function createLLM(config: ReturnType<typeof getConfig>): LLMClient {
+  const groqKey = config.groqKey || process.env.GROQ_API_KEY
+  const openRouterKey = config.openRouterKey || process.env.OPENROUTER_API_KEY
+
   if (config.mode === 'local') {
     return LLMClient.createLocal()
   }
-  const apiKey = config.openRouterKey || process.env.OPENROUTER_API_KEY
+
   if (config.mode === 'auto') {
-    try {
-      return LLMClient.createLocal()
-    } catch {}
+    if (groqKey) {
+      return LLMClient.createGroq(groqKey)
+    }
+    if (openRouterKey) {
+      return new LLMClient(config.model, openRouterKey, {
+        provider: 'openrouter',
+        fallbackChain: config.fallbackModels || [],
+      })
+    }
+    return LLMClient.createLocal()
   }
-  if (!apiKey) {
-    console.error('Error: API key required. Run `openply config --set openRouterKey=<key>` or use --local')
-    process.exit(1)
+
+  if (groqKey) {
+    return LLMClient.createGroq(groqKey)
   }
-  return new LLMClient(config.model, apiKey, {
-    provider: 'openrouter',
-    fallbackChain: config.fallbackModels || [],
-  })
+  if (openRouterKey) {
+    return new LLMClient(config.model, openRouterKey, {
+      provider: 'openrouter',
+      fallbackChain: config.fallbackModels || [],
+    })
+  }
+  console.error('No API key found. Run `openply config --set groqKey=<key>` or use --local')
+  process.exit(1)
 }
 
 function readStdinSync(): string {
@@ -64,6 +94,11 @@ program
     if (opts.local) config.mode = 'local'
     if (opts.ads === false) config.adEnabled = false
 
+    // Prompt for API key on first run
+    if (!opts.local && !opts.json) {
+      await ensureKey(config)
+    }
+
     // Pipe support: cat file.ts | openply "explain this"
     const pipedInput = readStdinSync()
     if (pipedInput && prompt) {
@@ -97,7 +132,7 @@ program
       process.exit(result.review?.approved ? 0 : 1)
     }
 
-    await startRepl(config, prompt)
+    await startRepl(config, prompt, undefined, VERSION)
   })
 
 program
@@ -135,7 +170,7 @@ program
       process.exit(1)
     }
     const config = getConfig()
-    await startRepl(config, undefined, session)
+    await startRepl(config, undefined, session, VERSION)
   })
 
 program

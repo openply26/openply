@@ -21,6 +21,7 @@ export interface Config {
   openRouterKey?: string
   anthropicKey?: string
   openaiKey?: string
+  groqKey?: string
   fallbackModels?: string[]
 }
 
@@ -85,7 +86,7 @@ export interface AgentDefinition {
   handleSteps?: (params: AgentStepParams) => AsyncGenerator<AgentToolCall, void, string>
 }
 
-export type ModelProvider = 'openrouter' | 'ollama' | 'anthropic'
+export type ModelProvider = 'openrouter' | 'ollama' | 'anthropic' | 'groq'
 
 export interface ModelConfig {
   id: string

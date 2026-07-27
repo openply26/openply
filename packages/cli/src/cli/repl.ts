@@ -18,13 +18,13 @@ Use @AgentName to invoke a custom agent from .agents/
 Just type what you want and openPly will do it.
 `
 
-export async function startRepl(config: Config, initialPrompt?: string): Promise<void> {
+export async function startRepl(config: Config, initialPrompt?: string, _session?: unknown, version?: string): Promise<void> {
   const sessionId = createSession('openPly session')
   const history: Message[] = []
 
   await showSplash(config.adEnabled)
 
-  info(`v0.1.0 · ${config.mode === 'local' ? 'local mode' : config.mode === 'cloud' ? 'cloud mode' : 'auto mode'}`)
+  info(`v${version || '0.3.2'} · ${config.mode === 'local' ? 'local mode' : config.mode === 'cloud' ? 'cloud mode' : 'auto mode'}`)
   info('type /help for commands')
 
   if (initialPrompt) {
@@ -128,7 +128,7 @@ function handleCommand(input: string, rl: any, config: Config, history: Message[
     case 'new':
       info('Starting new session...')
       rl.close()
-      startRepl(config)
+      startRepl(config, undefined, undefined, version)
       break
     case 'init':
       scaffoldProject(process.cwd())
