@@ -40,7 +40,7 @@ export { generateDiff, formatDiff } from './utils/diff'
 export { SYSTEM_PROMPT, PLANNER_PROMPT, EDITOR_PROMPT, REVIEWER_PROMPT, buildFileContext } from './llm/prompts'
 
 // Models
-export { FULL_MODELS, LIMITED_MODELS, LOCAL_MODELS, GROQ_MODELS, getAvailableModels } from './llm/models'
+export { FULL_MODELS, LIMITED_MODELS, LOCAL_MODELS, GROQ_MODELS, OX_ALPHA, getAvailableModels } from './llm/models'
 
 // Registry
 export { getBuiltinAgents, formatAgentList } from './registry/registry'

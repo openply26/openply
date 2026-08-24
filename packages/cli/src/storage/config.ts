@@ -4,7 +4,7 @@ import { Config, encryptApiKey, decryptApiKey, auditLog } from '@openply/core'
 const store = new Conf<Config>({ projectName: 'openply' })
 
 const DEFAULTS: Config = {
-  model: 'mixtral-8x7b-32768',
+  model: 'stealth/ox-alpha',
   localModel: 'deepseek-coder-v2',
   mode: 'auto',
   theme: 'dark',

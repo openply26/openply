@@ -7,7 +7,10 @@ export const GROQ_MODELS: ModelConfig[] = [
   { id: 'gemma2-9b-it', provider: 'groq', displayName: 'Gemma 2 9B (Groq)', contextWindow: 8192, collectsData: false },
 ]
 
+export const OX_ALPHA: ModelConfig = { id: 'stealth/ox-alpha', provider: 'openrouter', displayName: 'Ox Alpha (Free · 1M ctx)', contextWindow: 1048576, collectsData: false }
+
 export const FULL_MODELS: ModelConfig[] = [
+  OX_ALPHA,
   ...GROQ_MODELS,
   { id: 'deepseek/deepseek-v4-pro', provider: 'openrouter', displayName: 'DeepSeek V4 Pro', contextWindow: 128000, collectsData: false },
   { id: 'minimax/minimax-m2-pro', provider: 'openrouter', displayName: 'MiMo 2.5 Pro', contextWindow: 128000, collectsData: false },
@@ -18,6 +21,7 @@ export const FULL_MODELS: ModelConfig[] = [
 ]
 
 export const LIMITED_MODELS: ModelConfig[] = [
+  OX_ALPHA,
   { id: 'mixtral-8x7b-32768', provider: 'groq', displayName: 'Mixtral 8x7B (Groq)', contextWindow: 32768, collectsData: false },
   { id: 'deepseek/deepseek-v4-flash', provider: 'openrouter', displayName: 'DeepSeek V4 Flash', contextWindow: 128000, collectsData: false },
   { id: 'minimax/minimax-m2', provider: 'openrouter', displayName: 'MiMo 2.5', contextWindow: 128000, collectsData: false },
