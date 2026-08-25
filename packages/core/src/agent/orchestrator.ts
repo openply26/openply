@@ -20,72 +20,70 @@ import { mcpClient } from '../mcp/client'
 import { runFileChangeHooks } from '../hooks/runner'
 import { createInterface } from 'readline'
 import { resolve } from 'path'
+import { existsSync } from 'fs'
 import chalk from 'chalk'
 
-const TOOL_COLOR = chalk.cyan
-const RESULT_COLOR = chalk.dim
-
-function toolArgsLabel(call: { name: string; args: Record<string, string> }): string {
-  const a = call.args || {}
-  switch (call.name) {
-    case 'read_file':
-    case 'write_file':
-    case 'propose_write_file':
-    case 'str_replace':
-    case 'edit_file':
-    case 'propose_str_replace':
-      return String(a.path || '')
-    case 'read_files':
-      return String(a.paths || '').slice(0, 90)
-    case 'run_command':
-      return String(a.command || '').slice(0, 90)
-    case 'search_code':
-      return String(a.query || '').slice(0, 60)
-    case 'skill':
-      return String(a.name || '')
-    case 'ask_user':
-      return ''
-    case 'apply_patch':
-      try { return `${JSON.parse(a.patches || '[]').length} ops` } catch { return '' }
-    default:
-      return ''
-  }
-}
+const BULLET = chalk.white('●')
 
 function printToolCall(call: { name: string; args: Record<string, string> }): void {
-  const label = toolArgsLabel(call)
-  const labelStr = label ? `(${label.length > 90 ? label.slice(0, 90) + '…' : label})` : ''
-  console.log(`\n${TOOL_COLOR('⏺')} ${chalk.bold(call.name)}${TOOL_COLOR(labelStr)}`)
+  const a = call.args || {}
+  switch (call.name) {
+    case 'str_replace':
+    case 'edit_file':
+      console.log(`\n${BULLET} ${chalk.bold('Edit')} ${a.path || ''}`)
+      break
+    case 'write_file':
+    case 'propose_write_file':
+      console.log(`\n${BULLET} ${chalk.bold('Create')} ${a.path || ''}`)
+      break
+    case 'run_command':
+      console.log(`\n${BULLET} ${chalk.bold(String(a.command || '').slice(0, 110))}`)
+      break
+    case 'read_files':
+      console.log(`\n${BULLET} ${chalk.bold('Read')} ${chalk.dim(String(a.paths || '').slice(0, 100))}`)
+      break
+    case 'search_code':
+      console.log(`\n${BULLET} ${chalk.bold('Search')} ${chalk.dim(String(a.query || '').slice(0, 70))}`)
+      break
+    case 'ask_user':
+    case 'done':
+      break
+    default: {
+      console.log(`\n${BULLET} ${chalk.bold(call.name)}`)
+    }
+  }
 }
 
 function printToolResult(call: { name: string; args: Record<string, string> }, output: string): void {
   const lines = output.split('\n').filter(l => l.trim() !== '')
-  const isEdit = ['edit_file', 'str_replace', 'write_file'].includes(call.name)
+  const ind = (l: string) => console.log('  ' + l)
 
   if (call.name.startsWith('propose')) {
-    console.log(RESULT_COLOR('  ⎿ proposed — waiting for your approval'))
+    ind(chalk.dim('⎿ proposed — waiting for your approval…'))
     return
   }
 
-  if (isEdit) {
+  if (call.name === 'edit_file' || call.name === 'str_replace') {
     const diffLines = lines.filter(l => l.startsWith('+') || l.startsWith('-'))
-    const added = diffLines.filter(l => l.startsWith('+')).length
-    const removed = diffLines.filter(l => l.startsWith('-')).length
-    console.log(RESULT_COLOR(`  ⎿ Updated ${call.args.path} ${chalk.green(`(${added} +)`)}`) + (removed ? RESULT_COLOR(` ${chalk.red(`(${removed} −)`)}`) : ''))
-    diffLines.slice(0, 6).forEach(l => {
-      console.log(l.startsWith('+') ? chalk.green(`  ⎿ ${l}`) : chalk.red(`  ⎿ ${l}`))
-    })
-    if (diffLines.length > 6) console.log(RESULT_COLOR(`  ⎿ … ${diffLines.length - 6} more diff lines`))
+    diffLines.slice(0, 8).forEach(l => ind(l.startsWith('+') ? chalk.green(l) : chalk.red(l)))
+    if (diffLines.length > 8) ind(chalk.dim(`… ${diffLines.length - 8} more diff lines`))
     return
   }
 
-  if (lines.length === 0) {
-    console.log(RESULT_COLOR('  ⎿ (no output)'))
+  if (call.name === 'write_file') {
+    ind(chalk.dim(lines[0] ? `✔ ${lines[0]}` : '✔ written'))
     return
   }
-  const max = call.name === 'run_command' ? 8 : 3
-  lines.slice(0, max).forEach(l => console.log(RESULT_COLOR(`  ⎿ ${l.slice(0, 160)}`)))
-  if (lines.length > max) console.log(RESULT_COLOR(`  ⎿ … ${lines.length - max} more lines`))
+
+  if (call.name === 'run_command') {
+    if (lines.length === 0) { ind(chalk.dim('(no output)')); return }
+    lines.slice(0, 10).forEach(l => ind(chalk.dim(l.slice(0, 160))))
+    if (lines.length > 10) ind(chalk.dim(`… ${lines.length - 10} more lines`))
+    return
+  }
+
+  lines.slice(0, 3).forEach(l => ind(chalk.dim(l.slice(0, 120))))
+  if (lines.length > 3) ind(chalk.dim(`… ${lines.length - 3} more`))
 }
 
 const CORE_TOOLS = ['read_file', 'read_files', 'write_file', 'str_replace', 'edit_file', 'apply_patch', 'run_command', 'search_code', 'ask_user', 'skill', 'propose_write_file', 'propose_str_replace', 'done']
