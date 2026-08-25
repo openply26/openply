@@ -1,6 +1,6 @@
 {
   "name": "openply-monorepo",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "private": true,
   "description": "openPly monorepo — free, local-first AI coding assistant",
   "workspaces": [

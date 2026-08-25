@@ -494,27 +494,36 @@ ${toolDocs}`
     const MAX_ITERATIONS = 20
 
     let printing = true
-    let tail = ''
+    let buf = ''
     let streamedAny = false
     const streamFilter = (token: string) => {
-      tail = (tail + token).slice(-12)
-      if (printing) {
-        if (tail.includes('```tool') || tail.includes('```json')) {
-          const idx = Math.max(tail.lastIndexOf('```tool'), tail.lastIndexOf('```json'))
-          const visible = tail.slice(0, idx)
-          const consumed = tail.slice(idx)
-          if (visible) process.stdout.write(visible)
-          tail = consumed
-          printing = false
-          return
+      if (!printing) {
+        buf += token
+        const close = buf.indexOf('```')
+        if (close >= 0) {
+          printing = true
+          const rest = buf.slice(close + 3)
+          buf = ''
+          if (rest) streamFilter(rest)
         }
-        process.stdout.write(token)
-        streamedAny = true
-        tail = tail.slice(-12)
-      } else if (tail.includes('```')) {
-        printing = true
-        tail = ''
+        return
       }
+      buf += token
+      const open = buf.search(/```(tool|json)/)
+      if (open >= 0) {
+        const visible = buf.slice(0, open)
+        if (visible) process.stdout.write(visible)
+        buf = buf.slice(open)
+        printing = false
+        streamedAny = streamedAny || visible.length > 0
+        return
+      }
+      const safe = buf.slice(0, -8)
+      if (safe) {
+        process.stdout.write(safe)
+        streamedAny = true
+      }
+      buf = buf.slice(-8)
     }
 
     for (let i = 0; i < MAX_ITERATIONS; i++) {
@@ -522,11 +531,17 @@ ${toolDocs}`
       await this.fitContext(allMessages)
 
       printing = true
-      tail = ''
+      buf = ''
       streamedAny = false
       const response = await this.llm.chat(allMessages, streamFilter)
-      if (streamedAny) process.stdout.write('\n')
+      if (streamedAny) process.stdout.write(buf + '\n')
+      buf = ''
       const toolCalls = this.parseToolCalls(response)
+
+      if (toolCalls.length === 0) {
+        if (!streamedAny) console.log(response)
+        break
+      }
 
       if (toolCalls.length === 0) {
         if (!streamedAny) console.log(response)
