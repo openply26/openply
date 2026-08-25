@@ -95,7 +95,7 @@ app.get('/api/models', async (_req, res) => {
 
 // ---------- Chat streaming (SSE) ----------
 
-function streamOpenRouter(messages: any[], model: string, signal: AbortSignal) {
+function streamOpenRouter(messages: any[], model: string, signal: AbortSignal, reasoning?: any) {
   return fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -104,7 +104,9 @@ function streamOpenRouter(messages: any[], model: string, signal: AbortSignal) {
       'HTTP-Referer': 'https://openply.pages.dev',
       'X-Title': 'openPly Web',
     },
-    body: JSON.stringify({ model, messages, stream: true, usage: { include: true } }),
+    body: JSON.stringify(reasoning && typeof reasoning === 'object'
+      ? { model, messages, stream: true, usage: { include: true }, reasoning }
+      : { model, messages, stream: true, usage: { include: true } }),
     signal,
   })
 }
@@ -177,7 +179,7 @@ function classifyUpstreamError(status: number): { code: string; message: string 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 app.post('/api/chat', async (req, res) => {
-  const { prompt, history, model } = req.body
+  const { prompt, history, model, reasoning } = req.body
   if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
     res.status(400).json({ error: 'prompt required' })
     return
@@ -216,7 +218,7 @@ app.post('/api/chat', async (req, res) => {
 
     const doRequest = () => isOllama
       ? streamOllama(messages, requestedModel.replace('ollama/', ''), controller.signal)
-      : streamOpenRouter(messages, requestedModel, controller.signal)
+      : streamOpenRouter(messages, requestedModel, controller.signal, reasoning)
 
     let response = await doRequest()
 

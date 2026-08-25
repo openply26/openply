@@ -529,6 +529,11 @@ ${toolDocs}`
       }
     }
 
+    const last = allMessages.filter(m => m.role === 'assistant').pop()
+    if (last?.content) {
+      const text = last.content.replace(/```tool[\s\S]*?```/g, '').trim()
+      if (text) console.log(`\n${text}`)
+    }
     return { edits, review: edits.length > 0 ? await this.reviewChanges(edits) : null }
   }
 

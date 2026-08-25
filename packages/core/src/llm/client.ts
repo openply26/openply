@@ -166,7 +166,12 @@ export class LLMClient {
     const res = await fetch(`${base}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, history, model: this.model }),
+      body: JSON.stringify({
+        prompt,
+        history,
+        model: this.model,
+        reasoning: { effort: (this as any).reasoningEffort || process.env.OPENPLY_REASONING_EFFORT || 'low' },
+      }),
       signal: AbortSignal.timeout(120_000),
     })
 
