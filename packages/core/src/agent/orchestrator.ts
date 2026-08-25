@@ -20,6 +20,73 @@ import { mcpClient } from '../mcp/client'
 import { runFileChangeHooks } from '../hooks/runner'
 import { createInterface } from 'readline'
 import { resolve } from 'path'
+import chalk from 'chalk'
+
+const TOOL_COLOR = chalk.cyan
+const RESULT_COLOR = chalk.dim
+
+function toolArgsLabel(call: { name: string; args: Record<string, string> }): string {
+  const a = call.args || {}
+  switch (call.name) {
+    case 'read_file':
+    case 'write_file':
+    case 'propose_write_file':
+    case 'str_replace':
+    case 'edit_file':
+    case 'propose_str_replace':
+      return String(a.path || '')
+    case 'read_files':
+      return String(a.paths || '').slice(0, 90)
+    case 'run_command':
+      return String(a.command || '').slice(0, 90)
+    case 'search_code':
+      return String(a.query || '').slice(0, 60)
+    case 'skill':
+      return String(a.name || '')
+    case 'ask_user':
+      return ''
+    case 'apply_patch':
+      try { return `${JSON.parse(a.patches || '[]').length} ops` } catch { return '' }
+    default:
+      return ''
+  }
+}
+
+function printToolCall(call: { name: string; args: Record<string, string> }): void {
+  const label = toolArgsLabel(call)
+  const labelStr = label ? `(${label.length > 90 ? label.slice(0, 90) + '…' : label})` : ''
+  console.log(`\n${TOOL_COLOR('⏺')} ${chalk.bold(call.name)}${TOOL_COLOR(labelStr)}`)
+}
+
+function printToolResult(call: { name: string; args: Record<string, string> }, output: string): void {
+  const lines = output.split('\n').filter(l => l.trim() !== '')
+  const isEdit = ['edit_file', 'str_replace', 'write_file'].includes(call.name)
+
+  if (call.name.startsWith('propose')) {
+    console.log(RESULT_COLOR('  ⎿ proposed — waiting for your approval'))
+    return
+  }
+
+  if (isEdit) {
+    const diffLines = lines.filter(l => l.startsWith('+') || l.startsWith('-'))
+    const added = diffLines.filter(l => l.startsWith('+')).length
+    const removed = diffLines.filter(l => l.startsWith('-')).length
+    console.log(RESULT_COLOR(`  ⎿ Updated ${call.args.path} ${chalk.green(`(${added} +)`)}`) + (removed ? RESULT_COLOR(` ${chalk.red(`(${removed} −)`)}`) : ''))
+    diffLines.slice(0, 6).forEach(l => {
+      console.log(l.startsWith('+') ? chalk.green(`  ⎿ ${l}`) : chalk.red(`  ⎿ ${l}`))
+    })
+    if (diffLines.length > 6) console.log(RESULT_COLOR(`  ⎿ … ${diffLines.length - 6} more diff lines`))
+    return
+  }
+
+  if (lines.length === 0) {
+    console.log(RESULT_COLOR('  ⎿ (no output)'))
+    return
+  }
+  const max = call.name === 'run_command' ? 8 : 3
+  lines.slice(0, max).forEach(l => console.log(RESULT_COLOR(`  ⎿ ${l.slice(0, 160)}`)))
+  if (lines.length > max) console.log(RESULT_COLOR(`  ⎿ … ${lines.length - max} more lines`))
+}
 
 const CORE_TOOLS = ['read_file', 'read_files', 'write_file', 'str_replace', 'edit_file', 'apply_patch', 'run_command', 'search_code', 'ask_user', 'skill', 'propose_write_file', 'propose_str_replace', 'done']
 
@@ -564,23 +631,10 @@ ${toolDocs}`
           continue
         }
 
+        printToolCall(call)
         const result = await this.executeToolCall(call)
         edits.push(...result.edits)
-
-        if (call.name === 'run_command') {
-          const lines = result.output.split('\n').filter(l => l.trim())
-          const preview = lines.slice(0, 10).join('\n')
-          console.log(dim(`  ┌─ ${call.args.command}`))
-          if (preview) console.log(dim(preview.split('\n').map(l => `  │ ${l}`).join('\n')))
-          if (lines.length > 10) console.log(dim(`  │ … +${lines.length - 10} more lines`))
-        } else if (call.name === 'read_files') {
-          console.log(dim(`  ✓ read ${String(call.args.paths).split(',').length} file(s)`))
-        } else if (call.name === 'search_code') {
-          const count = result.output.split('\n').length - 1
-          console.log(dim(`  ✓ search: ${count} match(es)`))
-        } else if (call.name === 'write_file' || call.name === 'propose_write_file') {
-          console.log(dim(`  ✓ wrote ${call.args.path}`))
-        }
+        printToolResult(call, result.output)
 
         allMessages.push({
           role: 'user',
@@ -813,7 +867,6 @@ ${toolDocs}`
     await writeFileContent(path, newContent, { rootDir: this.context.cwd })
     edits.push({ filePath: path, oldContent: old, newContent, timestamp: Date.now() })
     const diff = formatDiff(generateDiff(path, old, newContent))
-    renderDiff(diff)
     return { edits, output: `Edited ${path}\n${diff}` }
   }
 

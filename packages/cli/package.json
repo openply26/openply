@@ -1,6 +1,6 @@
 {
   "name": "openply",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "description": "openPly — free, local-first AI coding assistant",
   "bin": {
     "openply": "./dist/cli/index.js"
