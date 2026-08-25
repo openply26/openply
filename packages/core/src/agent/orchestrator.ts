@@ -19,8 +19,9 @@ import { discoverSkills, type Skill } from '../skills/loader'
 import { mcpClient } from '../mcp/client'
 import { runFileChangeHooks } from '../hooks/runner'
 import { createInterface } from 'readline'
+import { resolve } from 'path'
 
-const CORE_TOOLS = ['read_file', 'write_file', 'edit_file', 'run_command', 'search_code', 'done']
+const CORE_TOOLS = ['read_file', 'read_files', 'write_file', 'str_replace', 'edit_file', 'apply_patch', 'run_command', 'search_code', 'ask_user', 'skill', 'propose_write_file', 'propose_str_replace', 'done']
 
 const TOOL_DEFINITIONS = [
   {
@@ -114,6 +115,81 @@ const TOOL_DEFINITIONS = [
         type: 'object',
         properties: { name: { type: 'string', description: 'Skill name' } },
         required: ['name'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'str_replace',
+      description: 'Exact string replacement in a file (preferred edit method)',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'File path' },
+          old_text: { type: 'string', description: 'Exact text to find (must be unique in file)' },
+          new_text: { type: 'string', description: 'Replacement text' },
+        },
+        required: ['path', 'old_text', 'new_text'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'read_files',
+      description: 'Read multiple files at once',
+      parameters: {
+        type: 'object',
+        properties: {
+          paths: { type: 'string', description: 'Comma-separated file paths relative to project root' },
+        },
+        required: ['paths'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'apply_patch',
+      description: 'Apply batched file operations in one call. patches is a JSON array: [{"op":"create"|"update"|"delete","path":"...","content":"..."}] — create needs content, update optionally takes old_text/new_text instead of content, delete needs only path',
+      parameters: {
+        type: 'object',
+        properties: {
+          patches: { type: 'string', description: 'JSON array of patch operations' },
+        },
+        required: ['patches'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'propose_write_file',
+      description: 'Propose writing a file WITHOUT applying — shows the user a diff for approval first',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'File path' },
+          content: { type: 'string', description: 'Proposed full file content' },
+        },
+        required: ['path', 'content'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'propose_str_replace',
+      description: 'Propose an edit WITHOUT applying — shows the user a diff for approval first',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'File path' },
+          old_text: { type: 'string', description: 'Exact text to find' },
+          new_text: { type: 'string', description: 'Replacement text' },
+        },
+        required: ['path', 'old_text', 'new_text'],
       },
     },
   },
@@ -482,17 +558,7 @@ export class Orchestrator {
         return { edits, output: `Written ${call.args.content.length} bytes to ${call.args.path}` }
       }
       case 'edit_file': {
-        showEditAnimation(call.args.path)
-        const old = await readFileContent(call.args.path)
-        const newContent = old.replace(call.args.old_text, call.args.new_text)
-        if (newContent === old) {
-          return { edits, output: `Warning: old_text not found in ${call.args.path}` }
-        }
-        await writeFileContent(call.args.path, newContent, { rootDir: this.context.cwd })
-        edits.push({ filePath: call.args.path, oldContent: old, newContent, timestamp: Date.now() })
-        const diff = formatDiff(generateDiff(call.args.path, old, newContent))
-        renderDiff(diff)
-        return { edits, output: `Edited ${call.args.path}\n${diff}` }
+        return this.doStrReplace(call.args.path, call.args.old_text, call.args.new_text, edits)
       }
       case 'run_command': {
         const result = runBash(call.args.command, this.context.cwd)
@@ -504,6 +570,94 @@ export class Orchestrator {
       case 'search_code': {
         const results = await searchFiles(call.args.query, this.context.cwd)
         return { edits, output: `Found ${results.length} files:\n${results.slice(0, 20).join('\n')}` }
+      }
+      case 'str_replace': {
+        return this.doStrReplace(call.args.path, call.args.old_text, call.args.new_text, edits)
+      }
+      case 'read_files': {
+        const paths = String(call.args.paths || '').split(',').map(p => p.trim()).filter(Boolean)
+        const parts: string[] = []
+        for (const p of paths.slice(0, 10)) {
+          try {
+            const content = await readFileContent(p)
+            parts.push(`=== ${p} ===\n${content.slice(0, 20_000)}${content.length > 20_000 ? '\n...[truncated]' : ''}`)
+          } catch {
+            parts.push(`=== ${p} === [not found]`)
+          }
+        }
+        return { edits, output: parts.join('\n\n') }
+      }
+      case 'apply_patch': {
+        let ops: any[] = []
+        try {
+          ops = JSON.parse(call.args.patches)
+        } catch {
+          return { edits, output: 'Invalid patches JSON' }
+        }
+        if (!Array.isArray(ops) || ops.length === 0) return { edits, output: 'No patch operations' }
+        const results: string[] = []
+        for (const op of ops.slice(0, 20)) {
+          try {
+            if (op.op === 'create') {
+              showEditAnimation(op.path)
+              await writeFileContent(op.path, op.content, { rootDir: this.context.cwd })
+              edits.push({ filePath: op.path, oldContent: '', newContent: op.content, timestamp: Date.now() })
+              results.push(`created ${op.path}`)
+            } else if (op.op === 'update') {
+              if (op.old_text !== undefined) {
+                const r = await this.doStrReplace(op.path, op.old_text, op.new_text ?? '', edits)
+                results.push(r.output.split('\n')[0])
+              } else {
+                const old = await readFileContent(op.path)
+                showEditAnimation(op.path)
+                await writeFileContent(op.path, op.content, { rootDir: this.context.cwd })
+                edits.push({ filePath: op.path, oldContent: old, newContent: op.content, timestamp: Date.now() })
+                results.push(`updated ${op.path}`)
+              }
+            } else if (op.op === 'delete') {
+              const { unlinkSync } = await import('fs')
+              const fullPath = resolve(this.context.cwd, op.path)
+              unlinkSync(fullPath)
+              results.push(`deleted ${op.path}`)
+            } else {
+              results.push(`unknown op: ${op.op}`)
+            }
+          } catch (err: any) {
+            results.push(`FAILED ${op.op} ${op.path}: ${err.message}`)
+          }
+        }
+        return { edits, output: `Applied ${results.length} ops:\n${results.join('\n')}` }
+      }
+      case 'propose_write_file': {
+        let old = ''
+        try { old = await readFileContent(call.args.path) } catch { }
+        const diff = formatDiff(generateDiff(call.args.path, old, call.args.content))
+        renderDiff(diff)
+        const answer = await this.askUser(`Apply proposed write to ${call.args.path}?`, ['yes', 'no'])
+        if (answer.toLowerCase() !== 'yes') {
+          return { edits, output: `User REJECTED the proposed write to ${call.args.path}. Adjust your approach.` }
+        }
+        showEditAnimation(call.args.path)
+        await writeFileContent(call.args.path, call.args.content, { rootDir: this.context.cwd })
+        edits.push({ filePath: call.args.path, oldContent: old, newContent: call.args.content, timestamp: Date.now() })
+        return { edits, output: `Applied proposed write to ${call.args.path}` }
+      }
+      case 'propose_str_replace': {
+        const old = await readFileContent(call.args.path)
+        const newContent = old.replace(call.args.old_text, call.args.new_text)
+        if (newContent === old) {
+          return { edits, output: `old_text not found in ${call.args.path}` }
+        }
+        const diff = formatDiff(generateDiff(call.args.path, old, newContent))
+        renderDiff(diff)
+        const answer = await this.askUser(`Apply proposed edit to ${call.args.path}?`, ['yes', 'no'])
+        if (answer.toLowerCase() !== 'yes') {
+          return { edits, output: `User REJECTED the proposed edit to ${call.args.path}. Adjust your approach.` }
+        }
+        showEditAnimation(call.args.path)
+        await writeFileContent(call.args.path, newContent, { rootDir: this.context.cwd })
+        edits.push({ filePath: call.args.path, oldContent: old, newContent, timestamp: Date.now() })
+        return { edits, output: `Applied proposed edit to ${call.args.path}` }
       }
       case 'ask_user': {
         const options = String(call.args.options || '').split('|').map(o => o.trim()).filter(Boolean)
@@ -548,6 +702,28 @@ export class Orchestrator {
         return { edits, output: `Unknown tool: ${call.name}` }
       }
     }
+  }
+
+  private async doStrReplace(
+    path: string | undefined,
+    oldText: string | undefined,
+    newText: string | undefined,
+    edits: FileEdit[],
+  ): Promise<{ edits: FileEdit[]; output: string }> {
+    if (!path || oldText === undefined) {
+      return { edits, output: 'str_replace requires path, old_text, new_text' }
+    }
+    const old = await readFileContent(path)
+    const newContent = old.replace(oldText, newText ?? '')
+    if (newContent === old) {
+      return { edits, output: `Warning: old_text not found in ${path}` }
+    }
+    showEditAnimation(path)
+    await writeFileContent(path, newContent, { rootDir: this.context.cwd })
+    edits.push({ filePath: path, oldContent: old, newContent, timestamp: Date.now() })
+    const diff = formatDiff(generateDiff(path, old, newContent))
+    renderDiff(diff)
+    return { edits, output: `Edited ${path}\n${diff}` }
   }
 
   private askUser(question: string, options: string[]): Promise<string> {

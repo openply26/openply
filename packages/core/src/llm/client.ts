@@ -1,7 +1,9 @@
 import OpenAI from 'openai'
 import { ModelConfig, Message } from '../types'
 
-export type Provider = 'openrouter' | 'ollama' | 'anthropic' | 'groq'
+export type Provider = 'openrouter' | 'ollama' | 'anthropic' | 'groq' | 'openply'
+
+export const HOSTED_API_URL = process.env.OPENPLY_API_URL || 'https://openply.onrender.com/api'
 
 export interface RetryConfig {
   maxRetries: number
@@ -71,6 +73,12 @@ export class LLMClient {
     return new LLMClient(model, apiKey, { provider: 'groq' })
   }
 
+  static createHosted(model = 'stealth/ox-alpha', baseUrl = HOSTED_API_URL) {
+    const client = new LLMClient(model, 'hosted', { provider: 'openply' })
+    ;(client as any).hostedBaseUrl = baseUrl.replace(/\/$/, '')
+    return client
+  }
+
   getModel(): string {
     return this.model
   }
@@ -109,6 +117,9 @@ export class LLMClient {
   }
 
   async chat(messages: Message[], onToken?: (token: string) => void): Promise<string> {
+    if (this.provider === 'openply') {
+      return this.withRetry(() => this.chatHosted(messages, onToken))
+    }
     if (!this.openai && !this.anthropicClient) {
       throw new Error('No LLM client configured. Run `openply config` to set up.')
     }
@@ -137,6 +148,61 @@ export class LLMClient {
       }
       throw err
     }
+  }
+
+  private async chatHosted(messages: Message[], onToken?: (token: string) => void): Promise<string> {
+    const base = (this as any).hostedBaseUrl || HOSTED_API_URL
+    const history = messages
+      .filter(m => m.role !== 'system')
+      .slice(0, -1)
+      .map(m => ({ role: m.role, content: m.content }))
+    const lastUser = [...messages].reverse().find(m => m.role === 'user')
+    const systemMsg = messages.find(m => m.role === 'system')
+
+    const prompt = systemMsg
+      ? `${systemMsg.content}\n\n${lastUser?.content || ''}`
+      : lastUser?.content || ''
+
+    const res = await fetch(`${base}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, history, model: this.model }),
+      signal: AbortSignal.timeout(120_000),
+    })
+
+    if (!res.ok || !res.body) {
+      const text = await res.text().catch(() => '')
+      throw new Error(`Hosted API error (${res.status}): ${text.slice(0, 200)}`)
+    }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let full = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (!trimmed.startsWith('data: ')) continue
+        try {
+          const parsed = JSON.parse(trimmed.slice(6))
+          if (parsed.error) throw new Error(parsed.error)
+          if (parsed.content) {
+            full += parsed.content
+            onToken?.(parsed.content)
+          }
+          if (parsed.done) return full
+        } catch (e: any) {
+          if (e.message && !e.message.startsWith('Unexpected')) throw e
+        }
+      }
+    }
+    return full
   }
 
   private async chatOpenAICompatible(
@@ -189,6 +255,9 @@ export class LLMClient {
 
   // Non-streaming chat for plan generation (returns full response)
   async chatSync(messages: Message[]): Promise<string> {
+    if (this.provider === 'openply') {
+      return this.withRetry(() => this.chatHosted(messages))
+    }
     if (!this.openai && !this.anthropicClient) {
       throw new Error('No LLM client configured.')
     }

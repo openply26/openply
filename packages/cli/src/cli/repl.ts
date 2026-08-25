@@ -121,7 +121,7 @@ function createLocalOrCloudLLM(config: Config): LLMClient | null {
         fallbackChain: config.fallbackModels || [],
       })
     }
-    return LLMClient.createLocal()
+    return LLMClient.createHosted()
   }
 
   if (groqKey) return LLMClient.createGroq(groqKey)
@@ -131,8 +131,7 @@ function createLocalOrCloudLLM(config: Config): LLMClient | null {
       fallbackChain: config.fallbackModels || [],
     })
   }
-  warn('No API key found. Run: openply config --set groqKey=<key> or openply config --set openRouterKey=<key>')
-  return null
+  return LLMClient.createHosted()
 }
 
 function handleCommand(input: string, rl: any, config: Config, history: Message[], sessionId: string, version: string, onNew: () => void): void {
