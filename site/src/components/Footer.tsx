@@ -30,7 +30,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="text-center">
           <p className="text-[13px] text-[#5a5a8a]">
-            openPly v0.3.0 &mdash; MIT licensed &mdash; free for everyone, forever.
+            openPly v0.5 &mdash; MIT licensed &mdash; free for everyone, forever.
           </p>
           <p className="mt-1.5 text-[12px] text-[#3a3a5a]">
             Built for developers who value privacy.

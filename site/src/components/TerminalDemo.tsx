@@ -13,7 +13,7 @@ export default function TerminalDemo() {
             <span className="h-2.5 sm:h-3 w-2.5 sm:w-3 rounded-full bg-[#28c840] opacity-80" />
           </div>
           <div className="flex-1 text-center">
-            <span className="font-mono text-[10px] sm:text-[11px] text-[#5a5a8a]">openply v0.3.0</span>
+            <span className="font-mono text-[10px] sm:text-[11px] text-[#5a5a8a]">openply v0.5</span>
           </div>
           <div className="w-[40px] sm:w-[52px]" />
         </div>

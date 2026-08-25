@@ -42,7 +42,7 @@ export default function Plugins() {
           <div className="order-1 lg:order-2 text-center sm:text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,229,255,0.15)] bg-[rgba(0,229,255,0.05)] px-3.5 py-1 text-xs font-medium text-[#00e5ff] mb-5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#00e5ff]" />
-              New in v0.3.0
+              New in v0.5
             </div>
             <h2 className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
               Plugin system

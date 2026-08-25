@@ -7,7 +7,7 @@ export default function MCPServer() {
           <div className="text-center sm:text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(151,117,250,0.15)] bg-[rgba(151,117,250,0.05)] px-3.5 py-1 text-xs font-medium text-[#9775fa] mb-5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#9775fa]" />
-              New in v0.3.0
+              New in v0.5
             </div>
             <h2 className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
               MCP Server

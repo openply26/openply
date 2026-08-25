@@ -15,8 +15,10 @@ export default function Hero() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00e5ff] opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-[#00e5ff]" />
           </span>
-          <span>v0.3.0</span>
+          <span>v0.5</span>
           <span className="hidden sm:inline text-[#5a5a8a]">|</span>
+          <span className="hidden sm:inline">Ox Alpha · 1M ctx</span>
+          <span className="hidden sm:inline text-[#5a5a8a]">&middot;</span>
           <span className="hidden sm:inline">MCP Server</span>
           <span className="hidden sm:inline text-[#5a5a8a]">&middot;</span>
           <span className="hidden sm:inline">Plugins</span>
