@@ -1,51 +1,139 @@
 import express from 'express'
 import cors from 'cors'
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'fs'
+import { execSync } from 'child_process'
 import { resolve, relative, sep, normalize } from 'path'
 
 const app = express()
 const PORT = process.env.PORT || 3001
 const ROOT = resolve(process.env.OPENPLY_ROOT || resolve(process.cwd(), '..'))
 
-app.use(cors())
-app.use(express.json())
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_KEY || ''
+const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'stealth/ox-alpha'
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:4173,https://openply.pages.dev')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean)
+const UPSTREAM_TIMEOUT_MS = 90_000
 
-function streamOpenRouter(messages: any[], model: string, key: string, res: any) {
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true)
+    cb(null, false)
+  },
+}))
+app.use(express.json({ limit: '4mb' }))
+
+// ---------- Live OpenRouter model catalog (cached) ----------
+
+interface ORModel {
+  id: string
+  name: string
+  context: number
+  promptPrice: number
+  completionPrice: number
+  free: boolean
+}
+
+const FALLBACK_MODELS: ORModel[] = [
+  { id: 'stealth/ox-alpha', name: 'Ox Alpha', context: 1048576, promptPrice: 0, completionPrice: 0, free: true },
+  { id: 'deepseek/deepseek-chat-v3-0324', name: 'DeepSeek V3 0324', context: 163840, promptPrice: 0.27, completionPrice: 1.1, free: false },
+  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', context: 1048576, promptPrice: 0.3, completionPrice: 2.5, free: false },
+  { id: 'openai/gpt-4o-mini', name: 'GPT-4o mini', context: 128000, promptPrice: 0.15, completionPrice: 0.6, free: false },
+  { id: 'anthropic/claude-3.5-sonnet', name: 'Claude Sonnet 3.5', context: 200000, promptPrice: 3, completionPrice: 15, free: false },
+  { id: 'deepseek/deepseek-chat-v3-0324:free', name: 'DeepSeek V3 0324 (free)', context: 163840, promptPrice: 0, completionPrice: 0, free: true },
+  { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B Instruct', context: 131072, promptPrice: 0.12, completionPrice: 0.31, free: false },
+]
+
+let modelCache: { models: ORModel[]; fetchedAt: number; live: boolean } | null = null
+const MODEL_CACHE_TTL = 6 * 60 * 60 * 1000
+
+async function fetchOpenRouterModels(): Promise<ORModel[]> {
+  const res = await fetch('https://openrouter.ai/api/v1/models', {
+    headers: { 'HTTP-Referer': 'https://openply.pages.dev', 'X-Title': 'openPly Web' },
+    signal: AbortSignal.timeout(10_000),
+  })
+  if (!res.ok) throw new Error(`OpenRouter models returned ${res.status}`)
+  const json = await res.json() as any
+  const models: ORModel[] = (json.data || [])
+    .filter((m: any) => m?.id && typeof m.id === 'string')
+    .map((m: any) => {
+      const promptPrice = Number(m.pricing?.prompt || 0) * 1_000_000
+      const completionPrice = Number(m.pricing?.completion || 0) * 1_000_000
+      return {
+        id: m.id,
+        name: m.name || m.id,
+        context: m.context_length || 0,
+        promptPrice,
+        completionPrice,
+        free: m.id.endsWith(':free') || (promptPrice === 0 && completionPrice === 0),
+      }
+    })
+    .sort((a: ORModel, b: ORModel) => Number(b.free) - Number(a.free) || a.name.localeCompare(b.name))
+  if (!models.length) throw new Error('OpenRouter returned empty model list')
+  return models
+}
+
+app.get('/api/models', async (_req, res) => {
+  const now = Date.now()
+  if (modelCache && now - modelCache.fetchedAt < MODEL_CACHE_TTL) {
+    res.json(modelCache)
+    return
+  }
+  try {
+    const models = await fetchOpenRouterModels()
+    modelCache = { models, fetchedAt: now, live: true }
+    res.json(modelCache)
+  } catch (err: any) {
+    if (modelCache) {
+      res.json(modelCache)
+      return
+    }
+    res.json({ models: FALLBACK_MODELS, fetchedAt: now, live: false, error: err.message })
+  }
+})
+
+// ---------- Chat streaming (SSE) ----------
+
+function streamOpenRouter(messages: any[], model: string, signal: AbortSignal) {
   return fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${key}`,
+      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': 'https://openply.pages.dev',
       'X-Title': 'openPly Web',
     },
-    body: JSON.stringify({ model, messages, stream: true }),
+    body: JSON.stringify({ model, messages, stream: true, usage: { include: true } }),
+    signal,
   })
 }
 
-function streamOllama(messages: any[], model: string, res: any) {
+function streamOllama(messages: any[], model: string, signal: AbortSignal) {
   return fetch('http://localhost:11434/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model, messages, stream: true }),
+    signal,
   })
 }
 
-async function pipeStream(response: Response, res: any) {
-  if (!response.ok) {
-    const err = await response.text()
-    res.write(`data: ${JSON.stringify({ error: `API error: ${response.status}`, details: err })}\n\n`)
-    res.end()
-    return
-  }
+function sseError(res: any, code: string, message: string) {
+  if (res.writableEnded) return
+  res.write(`data: ${JSON.stringify({ error: message, code })}\n\n`)
+  res.end()
+}
 
+async function pipeStream(response: Response, res: any) {
   const reader = response.body!.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
+  let usage: any = null
 
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
+    if (res.writableEnded) { reader.cancel().catch(() => {}); return }
     buffer += decoder.decode(value, { stream: true })
 
     const lines = buffer.split('\n')
@@ -59,48 +147,105 @@ async function pipeStream(response: Response, res: any) {
       try {
         const parsed = JSON.parse(data)
         const content = parsed.choices?.[0]?.delta?.content || parsed.message?.content || ''
-        if (content) {
-          res.write(`data: ${JSON.stringify({ content })}\n\n`)
+        if (content) res.write(`data: ${JSON.stringify({ content })}\n\n`)
+        if (parsed.usage) {
+          usage = {
+            promptTokens: parsed.usage.prompt_tokens ?? 0,
+            completionTokens: parsed.usage.completion_tokens ?? 0,
+            cost: parsed.usage.cost ?? null,
+          }
         }
       } catch { }
     }
   }
 
+  if (res.writableEnded) return
+  if (usage) res.write(`data: ${JSON.stringify({ usage })}\n\n`)
   res.write(`data: ${JSON.stringify({ done: true })}\n\n`)
   res.end()
 }
 
+function classifyUpstreamError(status: number): { code: string; message: string } {
+  if (status === 401 || status === 403) return { code: 'invalid_key', message: 'OpenRouter rejected the server API key. Check OPENROUTER_API_KEY.' }
+  if (status === 402) return { code: 'no_credits', message: 'OpenRouter account is out of credits.' }
+  if (status === 429) return { code: 'rate_limited', message: 'Rate limited by the upstream provider. Try again in a moment.' }
+  if (status === 404) return { code: 'model_not_found', message: 'That model is not available on OpenRouter.' }
+  if (status >= 500) return { code: 'upstream', message: `Upstream provider error (${status}).` }
+  return { code: 'upstream', message: `OpenRouter error (${status}).` }
+}
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+
 app.post('/api/chat', async (req, res) => {
-  const { prompt, history, model, apiKey } = req.body
-  const key = apiKey || process.env.OPENROUTER_KEY
+  const { prompt, history, model } = req.body
+  if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
+    res.status(400).json({ error: 'prompt required' })
+    return
+  }
+  const requestedModel = typeof model === 'string' && model.trim() ? model.trim() : DEFAULT_MODEL
 
   res.setHeader('Content-Type', 'text/event-stream')
-  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Cache-Control', 'no-cache, no-transform')
   res.setHeader('Connection', 'keep-alive')
+  res.setHeader('X-Accel-Buffering', 'no')
+  res.flushHeaders()
 
-  const messages = (history || []).map((m: any) => ({ role: m.role, content: m.content }))
+  const messages = (Array.isArray(history) ? history : [])
+    .filter((m: any) => m && typeof m.content === 'string' && ['user', 'assistant', 'system'].includes(m.role))
+    .map((m: any) => ({ role: m.role, content: m.content }))
   messages.push({ role: 'user', content: prompt })
 
-  try {
-    const isOllama = model.startsWith('ollama/')
-    let response
+  let clientClosed = false
+  const controller = new AbortController()
+  res.on('close', () => {
+    if (!res.writableEnded) {
+      clientClosed = true
+      controller.abort()
+    }
+  })
+  const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS)
 
-    if (isOllama) {
-      const ollamaModel = model.replace('ollama/', '')
-      response = await streamOllama(messages, ollamaModel, res)
-    } else {
-      if (!key) {
-        res.write(`data: ${JSON.stringify({ error: 'API key required. Set OPENROUTER_KEY env, pass apiKey, or use ollama/ model.' })}\n\n`)
-        res.end()
-        return
-      }
-      response = await streamOpenRouter(messages, model, key, res)
+  try {
+    const isOllama = requestedModel.startsWith('ollama/')
+
+    if (!isOllama && !OPENROUTER_API_KEY) {
+      clearTimeout(timeout)
+      sseError(res, 'no_key', 'Server is missing OPENROUTER_API_KEY. Set it in your backend environment variables.')
+      return
+    }
+
+    const doRequest = () => isOllama
+      ? streamOllama(messages, requestedModel.replace('ollama/', ''), controller.signal)
+      : streamOpenRouter(messages, requestedModel, controller.signal)
+
+    let response = await doRequest()
+
+    if (!response.ok && (response.status === 429 || response.status >= 500)) {
+      await response.body?.cancel().catch(() => {})
+      await sleep(1500)
+      if (clientClosed) return
+      response = await doRequest()
+    }
+
+    if (!response.ok) {
+      const { code, message } = classifyUpstreamError(response.status)
+      const details = await response.text().catch(() => '')
+      console.error(`[chat] upstream ${response.status}:`, details.slice(0, 300))
+      clearTimeout(timeout)
+      sseError(res, code, message)
+      return
     }
 
     await pipeStream(response, res)
   } catch (err: any) {
-    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`)
-    res.end()
+    if (clientClosed) return
+    if (err?.name === 'TimeoutError' || (err?.name === 'AbortError' && !clientClosed)) {
+      sseError(res, 'timeout', 'The request timed out. The model may be busy — try again.')
+    } else {
+      sseError(res, 'network', `Connection failed: ${err.message}`)
+    }
+  } finally {
+    clearTimeout(timeout)
   }
 })
 
@@ -137,15 +282,12 @@ app.post('/api/search', async (req, res) => {
   if (!query) { res.status(400).json({ error: 'query required' }); return }
 
   try {
-    const { execSync } = await import('child_process')
     let results: string[] = []
 
-    // Try ripgrep first
     try {
       const output = execSync(`rg -l "${query.replace(/"/g, '\\"')}" --max-count 30 --type-not class --iglob '!node_modules' --iglob '!dist' --iglob '!.git'`, { cwd: ROOT, encoding: 'utf-8', timeout: 10000 })
       results = output.trim().split('\n').filter(Boolean).slice(0, 30)
     } catch {
-      // Fall back to findstr (Windows) or grep
       try {
         const cmd = process.platform === 'win32'
           ? `findstr /M /S /C:"${query}" *.ts *.tsx *.js *.jsx *.json *.md *.css 2>nul`
@@ -168,10 +310,10 @@ app.post('/api/websearch', async (req, res) => {
   try {
     const response = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
       headers: { 'User-Agent': 'openPly/1.0' },
+      signal: AbortSignal.timeout(10_000),
     })
     const html = await response.text()
 
-    // Simple extraction of result snippets
     const snippets: string[] = []
     const regex = /<a[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi
     let match: RegExpExecArray | null
@@ -194,7 +336,6 @@ app.post('/api/terminal', async (req, res) => {
     return
   }
 
-  // Block dangerous commands
   const blocked = [
     /rm\s+-rf\s+[\/~]/i,
     /mkfs\./i,
@@ -210,14 +351,12 @@ app.post('/api/terminal', async (req, res) => {
     }
   }
 
-  // Limit command length
   if (command.length > 10000) {
     res.status(400).json({ error: 'Command too long (max 10KB)' })
     return
   }
 
   try {
-    const { execSync } = await import('child_process')
     const output = execSync(command, { cwd: ROOT, encoding: 'utf-8', timeout: 30000, maxBuffer: 2 * 1024 * 1024 })
     res.json({ output: output.toString() })
   } catch (err: any) {
@@ -226,7 +365,8 @@ app.post('/api/terminal', async (req, res) => {
 })
 
 app.get('/api/files/{*path}', (req, res) => {
-  const filePath = normalize(req.params.path || '')
+  const rawPath = req.params.path
+  const filePath = normalize(Array.isArray(rawPath) ? rawPath.join('/') : rawPath || '')
   const fullPath = resolve(ROOT, filePath)
 
   if (!fullPath.startsWith(ROOT)) {
@@ -269,7 +409,10 @@ const startTime = Date.now()
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
-    version: '0.2.0',
+    ok: true,
+    version: '0.4.0',
+    openrouterConfigured: Boolean(OPENROUTER_API_KEY),
+    defaultModel: DEFAULT_MODEL,
     uptime: Math.floor((Date.now() - startTime) / 1000),
     root: ROOT,
   })
@@ -278,8 +421,6 @@ app.get('/api/health', (_req, res) => {
 // --- Git Status ---
 app.get('/api/git/status', (_req, res) => {
   try {
-    const { execSync } = require('child_process')
-
     const branch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: ROOT, encoding: 'utf-8' }).trim()
 
     const status = execSync('git status --porcelain', { cwd: ROOT, encoding: 'utf-8' }).trim()
@@ -318,7 +459,6 @@ app.get('/api/git/status', (_req, res) => {
 // --- Git Diff ---
 app.get('/api/git/diff', (req, res) => {
   try {
-    const { execSync } = require('child_process')
     const file = req.query.file as string | undefined
     const cmd = file ? `git diff -- "${file}"` : 'git diff'
     const diff = execSync(cmd, { cwd: ROOT, encoding: 'utf-8', timeout: 5000 })
@@ -331,4 +471,8 @@ app.get('/api/git/diff', (req, res) => {
 app.listen(PORT, () => {
   console.log(`openPly API server running on http://localhost:${PORT}`)
   console.log(`Project root: ${ROOT}`)
+  console.log(`Default model: ${DEFAULT_MODEL}`)
+  if (!OPENROUTER_API_KEY) {
+    console.warn('WARNING: OPENROUTER_API_KEY is not set. Non-local chat requests will fail.')
+  }
 })

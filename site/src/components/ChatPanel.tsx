@@ -7,7 +7,7 @@ import DesignPartner from './DesignPartner'
 
 const SLASH_COMMANDS = [
   { cmd: '/help', desc: 'Show available commands' },
-  { cmd: '/model', desc: 'Switch model (e.g. /model deepseek/deepseek-v4-flash)' },
+  { cmd: '/model', desc: 'Switch model (e.g. /model stealth/ox-alpha)' },
   { cmd: '/clear', desc: 'Clear current session messages' },
   { cmd: '/session', desc: 'Show session info' },
   { cmd: '/agent', desc: 'Switch agent (e.g. /agent explorer)' },

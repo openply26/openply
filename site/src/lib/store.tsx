@@ -1,8 +1,8 @@
 import { createContext, useContext, useReducer, useCallback, useEffect, useRef, type ReactNode } from 'react'
-import { sendMessage } from './api'
-import type { ChatMessage } from './api'
+import { chatStream, checkHealth, fetchModels, type ChatMessage, type ORModel, type ChatUsage } from './api'
 
 export type RightPanel = 'code' | 'editor' | 'git' | 'terminal' | 'settings'
+export type BackendStatus = 'checking' | 'online' | 'offline'
 
 export interface Checkpoint {
   id: string
@@ -24,8 +24,16 @@ export interface Session {
   updatedAt: number
 }
 
+export const FALLBACK_DEFAULT_MODEL = 'stealth/ox-alpha'
+
 interface Providers { openrouter: string; openai: string; anthropic: string }
 interface Todo { id: string; text: string; done: boolean }
+
+export interface Toast {
+  id: string
+  type: 'success' | 'error' | 'info'
+  message: string
+}
 
 interface AppState {
   sessions: Session[]
@@ -40,6 +48,13 @@ interface AppState {
   searchResults: string[]
   webResults: string
   diagnostics: { model: string; mode: string; agent: string; messages: number; files: number }
+  backend: BackendStatus
+  healthInfo: { openrouterConfigured: boolean; defaultModel: string; uptime: number } | null
+  models: ORModel[]
+  modelsLive: boolean
+  usage: ChatUsage | null
+  toasts: Toast[]
+  streaming: boolean
 }
 
 function loadSessions(): Session[] {
@@ -74,6 +89,12 @@ type Action =
   | { type: 'SET_SEARCH'; results: string[] }
   | { type: 'SET_WEB_RESULTS'; results: string }
   | { type: 'SET_DIAGNOSTICS'; diagnostics: Partial<AppState['diagnostics']> }
+  | { type: 'SET_BACKEND'; status: BackendStatus; health?: AppState['healthInfo'] }
+  | { type: 'SET_MODELS'; models: ORModel[]; live: boolean }
+  | { type: 'SET_USAGE'; usage: ChatUsage | null }
+  | { type: 'ADD_TOAST'; toast: Toast }
+  | { type: 'DISMISS_TOAST'; id: string }
+  | { type: 'SET_STREAMING'; streaming: boolean }
 
 function reducer(state: AppState, action: Action): AppState {
   const upd = (id: string, changes: Partial<Session>) =>
@@ -109,6 +130,12 @@ function reducer(state: AppState, action: Action): AppState {
     case 'SET_SEARCH': return { ...state, searchResults: action.results }
     case 'SET_WEB_RESULTS': return { ...state, webResults: action.results }
     case 'SET_DIAGNOSTICS': return { ...state, diagnostics: { ...state.diagnostics, ...action.diagnostics } }
+    case 'SET_BACKEND': return { ...state, backend: action.status, healthInfo: action.health ?? state.healthInfo }
+    case 'SET_MODELS': return { ...state, models: action.models, modelsLive: action.live }
+    case 'SET_USAGE': return { ...state, usage: action.usage }
+    case 'ADD_TOAST': return { ...state, toasts: [...state.toasts.slice(-3), action.toast] }
+    case 'DISMISS_TOAST': return { ...state, toasts: state.toasts.filter(t => t.id !== action.id) }
+    case 'SET_STREAMING': return { ...state, streaming: action.streaming, loading: action.streaming ? state.loading : false }
     default: return state
   }
 }
@@ -119,8 +146,11 @@ const Ctx = createContext<{
   createSession: () => void; deleteSession: (id: string) => void; renameSession: (id: string, name: string) => void
   addMessage: (msg: ChatMessage) => void; updateMessage: (id: string, content: string) => void
   sendChat: (prompt: string) => Promise<void>
+  stopStreaming: () => void
   addCheckpoint: (label?: string) => void; undoToCheckpoint: () => void
   searchCode: (query: string) => Promise<void>; webSearch: (query: string) => Promise<void>
+  refreshModels: () => Promise<void>
+  toast: (message: string, type?: Toast['type']) => void
 } | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -128,26 +158,56 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     sessions: loadSessions(), activeSessionId: null, rightPanel: 'code',
     activeFile: null, fileContent: null, files: [], providers: loadProviders(), loading: false,
     todos: [], searchResults: [], webResults: '', diagnostics: { model: '', mode: 'build', agent: 'planner', messages: 0, files: 0 },
+    backend: 'checking', healthInfo: null, models: [], modelsLive: false, usage: null, toasts: [], streaming: false,
   })
 
   const stateRef = useRef(state)
   stateRef.current = state
+  const abortRef = useRef<AbortController | null>(null)
 
   if (!state.activeSessionId && state.sessions.length > 0)
     dispatch({ type: 'SET_ACTIVE_SESSION', id: state.sessions[0].id })
 
   useEffect(() => { localStorage.setItem('openply_sessions', JSON.stringify(state.sessions)) }, [state.sessions])
+
+  const toast = useCallback((message: string, type: Toast['type'] = 'info') => {
+    dispatch({ type: 'ADD_TOAST', toast: { id: Date.now().toString() + Math.random().toString(36).slice(2, 6), type, message } })
+  }, [])
+
+  // Backend health check on mount + when offline, retry every 15s
   useEffect(() => {
-    localStorage.setItem('openply_provider_openrouter', state.providers.openrouter)
-    localStorage.setItem('openply_provider_openai', state.providers.openai)
-    localStorage.setItem('openply_provider_anthropic', state.providers.anthropic)
-  }, [state.providers])
+    let cancelled = false
+    const check = async () => {
+      try {
+        const health = await checkHealth()
+        if (cancelled) return
+        dispatch({ type: 'SET_BACKEND', status: 'online', health: { openrouterConfigured: health.openrouterConfigured, defaultModel: health.defaultModel, uptime: health.uptime } })
+      } catch {
+        if (cancelled) return
+        dispatch({ type: 'SET_BACKEND', status: 'offline' })
+      }
+    }
+    check()
+    const interval = setInterval(check, state.backend === 'offline' ? 15000 : 60000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [state.backend])
+
+  const refreshModels = useCallback(async () => {
+    try {
+      const { models, live } = await fetchModels()
+      dispatch({ type: 'SET_MODELS', models, live })
+    } catch {
+      dispatch({ type: 'SET_MODELS', models: [], live: false })
+    }
+  }, [])
+
+  useEffect(() => { refreshModels() }, [refreshModels])
 
   const createSession = useCallback(() => {
     const n = stateRef.current.sessions.length
     dispatch({ type: 'ADD_SESSION', session: {
       id: Date.now().toString(), name: `openplysession ${n + 1}`, messages: [], checkpoints: [],
-      agent: 'planner', mode: 'build', autoAccept: false, model: 'deepseek/deepseek-v4-flash',
+      agent: 'planner', mode: 'build', autoAccept: false, model: FALLBACK_DEFAULT_MODEL,
       createdAt: Date.now(), updatedAt: Date.now(),
     }})
   }, [])
@@ -186,7 +246,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const searchCode = useCallback(async (query: string) => {
     try {
-      const res = await fetch('/api/search', {
+      const res = await fetch(`/api/search`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query }),
       })
@@ -198,7 +258,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const webSearch = useCallback(async (query: string) => {
     try {
-      const res = await fetch('/api/websearch', {
+      const res = await fetch(`/api/websearch`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query }),
       })
@@ -208,12 +268,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [addMessage])
 
+  const stopStreaming = useCallback(() => {
+    abortRef.current?.abort()
+    abortRef.current = null
+  }, [])
+
   const sendChat = useCallback(async (prompt: string) => {
     const st = stateRef.current
     const session = st.sessions.find((s) => s.id === st.activeSessionId)
     if (!session) return
 
-    // Auto-save checkpoint before sending
+    if (st.backend === 'offline') {
+      toast('Backend is offline — start the server or check VITE_API_URL', 'error')
+      return
+    }
+
     if (session.messages.length > 0 && session.checkpoints.length === 0) {
       dispatch({ type: 'ADD_CHECKPOINT', sessionId: session.id, checkpoint: { id: Date.now().toString(), messages: [...session.messages], timestamp: Date.now(), label: 'Before message' } })
     }
@@ -221,30 +290,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: prompt, timestamp: Date.now() }
     dispatch({ type: 'ADD_MESSAGE', sessionId: session.id, message: userMsg })
     dispatch({ type: 'SET_LOADING', loading: true })
+    dispatch({ type: 'SET_STREAMING', streaming: true })
 
     const assistantId = (Date.now() + 1).toString()
     dispatch({ type: 'ADD_MESSAGE', sessionId: session.id, message: { id: assistantId, role: 'assistant', content: '', timestamp: Date.now() } })
 
     const history = [...session.messages, userMsg]
-    const key = st.providers.openrouter
+    const controller = new AbortController()
+    abortRef.current = controller
 
-    await sendMessage(
-      prompt, history, session.model, key,
-      (chunk) => {
+    await chatStream(prompt, history, session.model, {
+      signal: controller.signal,
+      onChunk: (chunk) => {
         const st2 = stateRef.current
         const msg = st2.sessions.find(s => s.id === st2.activeSessionId)?.messages.find(m => m.id === assistantId)
         dispatch({ type: 'UPDATE_MESSAGE', sessionId: session.id, messageId: assistantId, content: (msg?.content || '') + chunk })
       },
-      () => { dispatch({ type: 'SET_LOADING', loading: false }); addCheckpoint('After response') },
-      (err) => {
-        dispatch({ type: 'UPDATE_MESSAGE', sessionId: session.id, messageId: assistantId, content: `Error: ${err}` })
-        dispatch({ type: 'SET_LOADING', loading: false })
+      onUsage: (usage) => dispatch({ type: 'SET_USAGE', usage }),
+      onDone: () => {
+        dispatch({ type: 'SET_STREAMING', streaming: false })
+        addCheckpoint('After response')
+        abortRef.current = null
       },
-    )
-  }, [addCheckpoint])
+      onError: (err) => {
+        dispatch({ type: 'UPDATE_MESSAGE', sessionId: session.id, messageId: assistantId, content: `⚠️ ${err.message}` })
+        dispatch({ type: 'SET_STREAMING', streaming: false })
+        toast(err.message, 'error')
+        abortRef.current = null
+      },
+    })
+  }, [addCheckpoint, toast])
 
   return (
-    <Ctx.Provider value={{ state, dispatch, activeSession, createSession, deleteSession, renameSession, addMessage, updateMessage, sendChat, addCheckpoint, undoToCheckpoint, searchCode, webSearch }}>
+    <Ctx.Provider value={{ state, dispatch, activeSession, createSession, deleteSession, renameSession, addMessage, updateMessage, sendChat, stopStreaming, addCheckpoint, undoToCheckpoint, searchCode, webSearch, refreshModels, toast }}>
       {children}
     </Ctx.Provider>
   )

@@ -1,6 +1,17 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 export default function Hero() {
+  const [copied, setCopied] = useState(false)
+
+  const copyInstall = async () => {
+    try {
+      await navigator.clipboard.writeText('npm install -g openply')
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch { }
+  }
+
   return (
     <section className="relative pt-32 sm:pt-40 pb-20 sm:pb-28 overflow-hidden spotlight">
       {/* Ambient orbs */}
@@ -15,8 +26,10 @@ export default function Hero() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00e5ff] opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-[#00e5ff]" />
           </span>
-          <span>v0.3.0</span>
+          <span>v0.4.0</span>
           <span className="hidden sm:inline text-[#5a5a8a]">|</span>
+          <span className="hidden sm:inline">Ox Alpha 1M ctx</span>
+          <span className="hidden sm:inline text-[#5a5a8a]">&middot;</span>
           <span className="hidden sm:inline">MCP Server</span>
           <span className="hidden sm:inline text-[#5a5a8a]">&middot;</span>
           <span className="hidden sm:inline">Plugins</span>
@@ -42,13 +55,19 @@ export default function Hero() {
 
         {/* CTAs — premium button styles */}
         <div className="mt-10 sm:mt-12 flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-5 px-4 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-          <a
-            href="#"
-            className="group relative flex h-[48px] sm:h-[56px] items-center justify-center rounded-2xl bg-gradient-to-r from-[#00e5ff] to-[#5c7cfa] px-5 sm:px-10 text-[13px] sm:text-base font-semibold text-[#06060e] transition-all duration-300 hover:shadow-[0_8px_40px_rgba(0,229,255,0.25)] hover:scale-[1.02] active:scale-[0.98]"
+          <button
+            onClick={copyInstall}
+            aria-label="Copy install command to clipboard"
+            className="group relative flex h-[48px] sm:h-[56px] items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#00e5ff] to-[#5c7cfa] px-5 sm:px-10 text-[13px] sm:text-base font-semibold text-[#06060e] transition-all duration-300 hover:shadow-[0_8px_40px_rgba(0,229,255,0.25)] hover:scale-[1.02] active:scale-[0.98]"
           >
-            <span className="relative z-10 whitespace-nowrap">npm install -g openply</span>
+            <span className="relative z-10 whitespace-nowrap font-mono">npm install -g openply</span>
+            {copied ? (
+              <svg className="relative z-10 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            ) : (
+              <svg className="relative z-10 h-4 w-4 opacity-60 transition-opacity group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+            )}
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#00e5ff] to-[#5c7cfa] opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-40" />
-          </a>
+          </button>
           <Link
             to="/app"
             className="group relative flex h-[48px] sm:h-[56px] items-center justify-center rounded-2xl border border-[rgba(0,229,255,0.2)] bg-[rgba(0,229,255,0.04)] px-5 sm:px-10 text-[13px] sm:text-base font-semibold text-[#00e5ff] transition-all duration-300 hover:bg-[rgba(0,229,255,0.08)] hover:border-[rgba(0,229,255,0.35)] hover:shadow-[0_8px_32px_rgba(0,229,255,0.1)] hover:scale-[1.02] active:scale-[0.98]"

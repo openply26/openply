@@ -1,4 +1,6 @@
+import { Square } from 'lucide-react'
 import { useStore } from '../lib/store'
+import ModelPicker from './ModelPicker'
 
 const AGENTS = [
   { id: 'planner', label: 'Planner', icon: '📋', desc: 'Read-only analysis & planning' },
@@ -9,7 +11,7 @@ const AGENTS = [
 ]
 
 export default function AgentBar() {
-  const { state, dispatch, activeSession } = useStore()
+  const { state, dispatch, activeSession, stopStreaming } = useStore()
 
   if (!activeSession) return null
 
@@ -67,8 +69,19 @@ export default function AgentBar() {
 
       <div className="flex-1" />
 
-      {/* Model display */}
-      <span className="text-[10px] text-[#64748b] font-mono">{activeSession.model.split('/').pop()}</span>
+      {/* Streaming stop button */}
+      {state.streaming && (
+        <button
+          onClick={stopStreaming}
+          className="flex items-center gap-1.5 rounded-lg border border-[#f87171]/30 bg-[#f87171]/10 px-2.5 py-1.5 text-[10px] font-medium text-[#f87171] transition-colors hover:bg-[#f87171]/20"
+          title="Stop generation"
+        >
+          <Square size={10} /> Stop
+        </button>
+      )}
+
+      {/* Model picker */}
+      <ModelPicker />
       {activeSession.mode === 'plan' && <span className="rounded border border-[#f59e0b]/30 bg-[#f59e0b]/10 px-2 py-0.5 text-[10px] text-[#f59e0b]">Read-only</span>}
     </div>
   )

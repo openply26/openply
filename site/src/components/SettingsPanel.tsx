@@ -1,8 +1,11 @@
 const CLOUD_MODELS = [
-  'deepseek/deepseek-v4-flash', 'deepseek/deepseek-v4-pro',
-  'minimax/minimax-m2', 'minimax/minimax-m2-pro',
-  'kimi/kimi-k2.7-code', 'minimax/minimax-m3',
-  'openai/gpt-4o', 'anthropic/claude-sonnet-4',
+  'stealth/ox-alpha',
+  'deepseek/deepseek-chat-v3-0324',
+  'google/gemini-2.5-flash',
+  'openai/gpt-4o-mini',
+  'openai/gpt-4o',
+  'anthropic/claude-3.5-sonnet',
+  'meta-llama/llama-3.3-70b-instruct',
 ]
 
 const LOCAL_MODELS = [
@@ -68,7 +71,7 @@ export default function SettingsPanel({ model, onModelChange, apiKey, onApiKeyCh
       {!isLocal && (
         <div className="rounded-lg border border-[#1e293b] bg-[#0f0f24] p-3">
           <p className="text-xs text-[#64748b]">
-            Your API key is stored locally and sent only to OpenRouter.
+            Cloud requests run through the openPly backend — the API key lives only in server environment variables, never in your browser.
           </p>
         </div>
       )}

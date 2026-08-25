@@ -1,13 +1,13 @@
 const MODELS = [
-  { name: 'DeepSeek V4 Pro', provider: 'OpenRouter', tag: 'Full mode', color: '#00e5ff' },
-  { name: 'MiMo 2.5 Pro', provider: 'OpenRouter', tag: 'Full mode', color: '#00e5ff' },
-  { name: 'Kimi K2.7 Code', provider: 'OpenRouter', tag: 'Full mode', color: '#00e5ff' },
-  { name: 'Claude Sonnet 4', provider: 'Anthropic (Direct)', tag: 'New', color: '#9775fa' },
-  { name: 'DeepSeek V4 Flash', provider: 'OpenRouter', tag: 'Fast', color: '#5c7cfa' },
-  { name: 'MiniMax M3', provider: 'OpenRouter', tag: 'Full mode', color: '#00e5ff' },
+  { name: 'Ox Alpha', provider: 'OpenRouter', tag: 'Free · 1M ctx', color: '#4ade80' },
+  { name: 'DeepSeek V3 0324', provider: 'OpenRouter', tag: 'Coding', color: '#00e5ff' },
+  { name: 'Claude Sonnet 3.5', provider: 'OpenRouter', tag: 'Pro', color: '#9775fa' },
+  { name: 'GPT-4o mini', provider: 'OpenRouter', tag: 'Fast', color: '#5c7cfa' },
+  { name: 'Gemini 2.5 Flash', provider: 'OpenRouter', tag: '1M ctx', color: '#5c7cfa' },
+  { name: 'Llama 3.3 70B', provider: 'OpenRouter', tag: 'Open source', color: '#00e5ff' },
   { name: 'DeepSeek Coder V2', provider: 'Ollama (Local)', tag: 'Local', color: '#fcc419' },
   { name: 'Qwen 2.5 Coder', provider: 'Ollama (Local)', tag: 'Local', color: '#fcc419' },
-  { name: 'CodeLlama', provider: 'Ollama (Local)', tag: 'Local', color: '#fcc419' },
+  { name: '400+ more', provider: 'Live OpenRouter catalog', tag: 'In-app picker', color: '#22D3EE' },
 ]
 
 export default function Models() {
@@ -25,7 +25,7 @@ export default function Models() {
             Supported models
           </h2>
           <p className="mx-auto mt-3 sm:mt-4 max-w-[520px] text-sm sm:text-lg text-[#5a5a8a] leading-relaxed">
-            Choose from the best open-source and cloud models. Retry, fallback chains, direct Anthropic SDK.
+            Ox Alpha free by default, plus the full live OpenRouter catalog and local Ollama models.
           </p>
         </div>
 

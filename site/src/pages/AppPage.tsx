@@ -12,6 +12,8 @@ import ProviderConfig from '../components/ProviderConfig'
 import { GitPanel } from '../components/GitPanel'
 import ToolBar from '../components/ToolBar'
 import StatusBar from '../components/StatusBar'
+import OfflineBanner from '../components/OfflineBanner'
+import ToastHost from '../components/Toast'
 
 const PANEL_TABS: { key: RightPanel; label: string; icon: string }[] = [
   { key: 'code', label: 'Code', icon: '📄' },
@@ -65,7 +67,7 @@ export default function AppPage() {
           <Link to="/" className="flex items-center gap-1.5 text-xs font-mono font-bold">
             <span className="text-[#F8FAFC]">open</span>
             <span className="text-[#22D3EE]">Ply</span>
-            <span className="hidden xs:inline ml-1 rounded border border-[#1e293b] px-1 py-0.5 text-[9px] text-[#64748b]">v0.3.0</span>
+            <span className="hidden xs:inline ml-1 rounded border border-[#1e293b] px-1 py-0.5 text-[9px] text-[#64748b]">v0.4.0</span>
           </Link>
         </div>
         {activeSession && (
@@ -81,6 +83,7 @@ export default function AppPage() {
           </div>
         )}
       </header>
+      <OfflineBanner />
 
       {/* Agent bar */}
       <AgentBar />
@@ -168,6 +171,7 @@ export default function AppPage() {
 
       {/* Status bar */}
       <StatusBar />
+      <ToastHost />
     </div>
   )
 }
