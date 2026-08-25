@@ -67,22 +67,50 @@ export async function showSplash(adEnabled: boolean): Promise<void> {
   console.log()
 }
 
+let currentAnimation: { pause: () => void; resume: () => void } | null = null
+
+export function pauseProcessingAnimation(): void {
+  currentAnimation?.pause()
+}
+
+export function resumeProcessingAnimation(): void {
+  currentAnimation?.resume()
+}
+
 export async function showProcessingAnimation(label: string): Promise<() => void> {
-  const frames = ['◐', '◓', '◑', '◒']
+  const frames = ['◓', '◑', '◒', '◐']
   let i = 0
   const start = Date.now()
+  let interval: ReturnType<typeof setInterval> | null = null
 
-  const interval = setInterval(() => {
+  const tick = () => {
     const elapsed = ((Date.now() - start) / 1000).toFixed(1)
     process.stdout.write(`\r${CYAN(frames[i % frames.length])} ${DIM(label)} ${DIM(`(${elapsed}s)`)}`)
     i++
-  }, 100)
+  }
+
+  interval = setInterval(tick, 100)
+
+  const pause = () => {
+    if (interval) {
+      clearInterval(interval)
+      interval = null
+    }
+    process.stdout.write('\r' + ' '.repeat(100) + '\r')
+  }
+  const resume = () => {
+    if (!interval) interval = setInterval(tick, 100)
+  }
+
+  currentAnimation = { pause, resume }
 
   return () => {
-    clearInterval(interval)
+    pause()
+    if (currentAnimation && (currentAnimation as any).pause === pause) currentAnimation = null
     process.stdout.write(`\r${CYAN('◉')} ${chalk.green('done')} ${DIM(`(${((Date.now() - start) / 1000).toFixed(1)}s)`)}`)
     console.log()
   }
+}
 }
 
 export function showEditAnimation(filePath: string): void {

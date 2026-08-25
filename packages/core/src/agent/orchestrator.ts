@@ -7,7 +7,7 @@ import { findProjectFiles, searchFiles } from '../fs/search'
 import { runBash } from '../bash/executor'
 import { generateDiff, formatDiff } from '../utils/diff'
 import { info, success, warn, renderDiff } from '../utils/display'
-import { showProcessingAnimation, showEditAnimation } from '../utils/splash'
+import { showProcessingAnimation, showEditAnimation, pauseProcessingAnimation, resumeProcessingAnimation } from '../utils/splash'
 import { loadProjectAgents } from './loader'
 import { loadKnowledge } from '../knowledge/loader'
 import { getBuiltinAgents } from '../registry/registry'
@@ -803,11 +803,13 @@ ${toolDocs}`
   }
 
   private askUser(question: string, options: string[]): Promise<string> {
+    pauseProcessingAnimation()
     return new Promise(resolve => {
       const rl = createInterface({ input: process.stdin, output: process.stdout })
       const opts = options.length > 0 ? `\n${options.map((o, i) => `  ${i + 1}. ${o}`).join('\n')}` : ''
-      rl.question(`\n? ${question}${opts}\n> `, answer => {
+      rl.question(`\n❓ ${question}${opts}\n\n> Type a number or your answer, then press Enter: `, answer => {
         rl.close()
+        resumeProcessingAnimation()
         const num = parseInt(answer, 10)
         resolve(options[num - 1] || answer)
       })

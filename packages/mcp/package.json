@@ -1,6 +1,6 @@
 {
   "name": "@openply/mcp",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "openPly MCP server — expose agents as tools for Claude Desktop, Cursor, and other MCP clients",
   "main": "./dist/index.js",
   "bin": {

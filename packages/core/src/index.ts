@@ -53,7 +53,7 @@ export { createSession, getMessages, addMessage, getSessions, deleteSession, get
 export { info, success, warn, error, code, dim, renderAd, renderDiff } from './utils/display'
 
 // Splash
-export { showSplash, showProcessingAnimation } from './utils/splash'
+export { showSplash, showProcessingAnimation, pauseProcessingAnimation, resumeProcessingAnimation } from './utils/splash'
 
 // Scaffold
 export { scaffoldProject } from './init/scaffold'
