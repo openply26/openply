@@ -412,6 +412,27 @@ export class Orchestrator {
   private buildSystemPrompt(agentMention?: AgentDefinition | null): string {
     let prompt = SYSTEM_PROMPT
 
+    const tools = this.getToolsForAgent(agentMention)
+    if (tools.length > 0) {
+      const toolDocs = tools.map(t => {
+        const params = (t.function.parameters?.properties || {}) as Record<string, any>
+        const required: string[] = t.function.parameters?.required || []
+        const sig = Object.keys(params).map(p => `${p}${required.includes(p) ? '' : '?'}: ${params[p]?.type || 'any'}`).join(', ')
+        return `- ${t.function.name}(${sig}): ${t.function.description}`
+      }).join('\n')
+      prompt += `
+
+## Tools
+You work in ${this.context.cwd}. To call a tool, include a fenced block in your reply exactly like:
+\`\`\`tool
+{"name": "tool_name", "args": {"param": "value"}}
+\`\`\`
+You may write text before the block. You will then receive the tool result and can call more tools. Always finish with the done tool.
+
+Available tools:
+${toolDocs}`
+    }
+
     if (this.knowledge) {
       prompt += `\n\n## Project Knowledge\n${this.knowledge}`
     }
