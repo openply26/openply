@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
-import type { RightPanel } from '../lib/store'
+import { useState, useEffect, useRef } from 'react'
+import { Check, FilePenLine, Save } from 'lucide-react'
+import { useStore, type RightPanel } from '../lib/store'
+import { writeFile } from '../lib/api'
 
 interface Props {
   path: string | null
@@ -8,75 +10,86 @@ interface Props {
 }
 
 export default function FileEditor({ path, content, onSwitchPanel }: Props) {
+  const { dispatch, toast } = useStore()
   const [draft, setDraft] = useState(content || '')
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [error, setError] = useState('')
+  const dirtyRef = useRef(false)
+
+  const dirty = path !== null && content !== null && draft !== content
 
   useEffect(() => {
     if (content !== null) setDraft(content)
   }, [path, content])
 
-  if (!path) {
-    return (
-      <div className="flex h-full items-center justify-center p-6 text-center">
-        <div>
-          <div className="text-3xl mb-2">📝</div>
-          <p className="text-sm text-[#64748b]">Select a file to edit</p>
-          <p className="mt-1 text-xs text-[#4a5568]">Switch to Code view to read files</p>
-        </div>
-      </div>
-    )
-  }
-
   const save = async () => {
+    if (!path || saving || !dirty) return
     setSaving(true)
-    setError('')
-    setSaved(false)
     try {
-      const res = await fetch('/api/write', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path, content: draft }),
-      })
-      if (!res.ok) { const e = await res.text(); throw new Error(e) }
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      await writeFile(path, draft)
+      dispatch({ type: 'SET_ACTIVE_FILE', path, content: draft })
+      toast(`Saved ${path}`, 'success')
     } catch (err: any) {
-      setError(err.message)
+      toast(`Save failed: ${err.message}`, 'error')
     }
     setSaving(false)
   }
 
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault()
+      save()
+    }
+  }
+
+  if (!path) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
+        <FilePenLine size={24} className="text-faint" strokeWidth={1.5} />
+        <p className="text-[11px] text-faint">Select a file to edit</p>
+        <p className="text-[10px] text-faint">Ctrl+S saves · dirty state is tracked</p>
+      </div>
+    )
+  }
+
+  const lineCount = content === null ? 0 : draft.split('\n').length
+
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-[#1e293b] px-4 py-2">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#64748b]">Editor</span>
-          <span className="text-[11px] font-mono text-[#94a3b8]">📄 {path}</span>
+      <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-1.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="min-w-0 truncate font-mono text-[10px] text-muted">{path}</span>
+          {dirty && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-warn" title="Unsaved changes" />}
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => onSwitchPanel('code')} className="text-[10px] text-[#64748b] hover:text-[#e2e8f0]">Read</button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button onClick={() => onSwitchPanel('code')} className="text-[10px] text-faint transition-colors hover:text-text">read</button>
           <button
             onClick={save}
-            disabled={saving}
-            className={`rounded-lg px-3 py-1.5 text-[11px] font-medium transition-colors ${
-              saved ? 'bg-green-500/20 text-green-400' : 'bg-[#22D3EE]/20 text-[#22D3EE] hover:bg-[#22D3EE]/30'
+            disabled={saving || !dirty}
+            className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
+              !dirty ? 'text-faint' : 'bg-accent/15 text-accent hover:bg-accent/25'
             }`}
           >
-            {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save'}
+            {saving ? 'saving…' : dirty ? <><Save size={10} /> save</> : <><Check size={10} className="text-success" /> saved</>}
           </button>
         </div>
       </div>
-      {error && <div className="px-4 py-2 text-[11px] text-[#ef4444] bg-[#ef4444]/5 border-b border-[#ef4444]/20">{error}</div>}
-      <div className="flex-1 overflow-auto">
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          className="h-full w-full resize-none bg-transparent p-4 font-mono text-sm leading-relaxed text-[#e2e8f0] outline-none placeholder-[#4a5568]"
-          spellCheck={false}
-        />
-      </div>
+      {content === null ? (
+        <div className="flex flex-1 items-center justify-center text-[11px] text-faint">Loading…</div>
+      ) : (
+        <div className="flex min-h-0 flex-1">
+          <pre aria-hidden className="select-none overflow-hidden border-r border-border bg-surface px-2 py-3 text-right font-mono text-[11px] leading-relaxed text-faint">
+            {Array.from({ length: lineCount }, (_, i) => <div key={i}>{i + 1}</div>)}
+          </pre>
+          <textarea
+            value={draft}
+            onChange={(e) => { setDraft(e.target.value); dirtyRef.current = true }}
+            onKeyDown={onKeyDown}
+            className="flex-1 resize-none overflow-auto bg-transparent px-3 py-3 font-mono text-[11px] leading-relaxed text-text outline-none placeholder-faint"
+            spellCheck={false}
+            aria-label={`Editing ${path}`}
+          />
+        </div>
+      )}
     </div>
   )
 }

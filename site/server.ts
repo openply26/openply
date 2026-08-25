@@ -1,6 +1,6 @@
 import express from 'express'
 import cors from 'cors'
-import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync } from 'fs'
 import { execSync } from 'child_process'
 import { resolve, relative, sep, normalize } from 'path'
 
@@ -249,6 +249,40 @@ app.post('/api/chat', async (req, res) => {
   }
 })
 
+
+app.post('/api/upload', (req, res) => {
+  const { name, type, data } = req.body || {}
+  if (!name || typeof data !== 'string' || !data.startsWith('data:')) {
+    res.status(400).json({ error: 'name and data (data URL) required' })
+    return
+  }
+  const match = /^data:([^;]+);base64,(.*)$/s.exec(data)
+  if (!match) {
+    res.status(400).json({ error: 'Invalid data URL' })
+    return
+  }
+  const size = Math.floor(match[2].length * 0.75)
+  if (size > 10 * 1024 * 1024) {
+    res.status(413).json({ error: 'File too large (max 10MB)' })
+    return
+  }
+  try {
+    const uploadDir = resolve(ROOT, 'uploads')
+    mkdirSync(uploadDir, { recursive: true })
+    const safe = normalize(name).replace(/[^a-zA-Z0-9._-]/g, '_')
+    const fileName = `${Date.now()}-${safe}`
+    const fullPath = resolve(uploadDir, fileName)
+    if (!fullPath.startsWith(uploadDir)) {
+      res.status(403).json({ error: 'Forbidden' })
+      return
+    }
+    writeFileSync(fullPath, Buffer.from(match[2], 'base64'))
+    const kind = typeof type === 'string' && type.startsWith('image/') && !type.includes('svg') ? 'image' : 'file'
+    res.json({ kind, name, path: `uploads/${fileName}`, url: `uploads/${fileName}`, size })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
 app.get('/api/files', (_req, res) => {
   const result: string[] = []
   walk(ROOT, '', result)

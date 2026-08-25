@@ -9,7 +9,7 @@ const FEATURES = [
   { icon: '⚡', color: '#5c7cfa', title: 'Function calling', desc: 'Agents use structured tool calls for reliable execution. Retry with fallback chains. Streaming responses.' },
   { icon: '📋', color: '#9775fa', title: 'Slash commands', desc: '/help, /model, /agent, /mode, /search, /web, /todo, /checkpoint, /undo, /design, /share, /export.' },
   { icon: '🔄', color: '#51cf66', title: 'Checkpoints & Undo', desc: 'Auto-save before every response. Undo to any checkpoint. Full session rewind with one keystroke.' },
-  { icon: '🌐', color: '#fcc419', title: 'Multi-provider AI', desc: 'OpenRouter (200+), OpenAI, Anthropic (direct SDK), Ollama. Retry, fallback chains, streaming.' },
+  { icon: '🌐', color: '#fcc419', title: 'Live model catalog', desc: 'OpenRouter 200+ models with live pricing and context sizes, plus OpenAI, Anthropic and Ollama. Free models included. Switch per session.' },
   { icon: '📤', color: '#ff6b9d', title: 'Share & export', desc: 'Share sessions via link. Export as Markdown. Collaboration-ready with shareable session snapshots.' },
 ]
 

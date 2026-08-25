@@ -2,53 +2,90 @@ import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
+import { Bot, Check, Copy, FileText, Paperclip, RotateCcw, Send, Square, Terminal, User, X } from 'lucide-react'
 import { useStore } from '../lib/store'
-import DesignPartner from './DesignPartner'
+import { formatBytes } from '../lib/api'
+import DesignPartner, { DESIGN_PROMPTS } from './DesignPartner'
 
 const SLASH_COMMANDS = [
   { cmd: '/help', desc: 'Show available commands' },
-  { cmd: '/model', desc: 'Switch model (e.g. /model stealth/ox-alpha)' },
+  { cmd: '/model', desc: 'Switch model by id (or use the picker above)' },
   { cmd: '/clear', desc: 'Clear current session messages' },
   { cmd: '/session', desc: 'Show session info' },
   { cmd: '/agent', desc: 'Switch agent (e.g. /agent explorer)' },
   { cmd: '/mode', desc: 'Switch mode: plan or build' },
   { cmd: '/checkpoint', desc: 'Save a checkpoint to undo later' },
   { cmd: '/undo', desc: 'Undo to last checkpoint' },
-  { cmd: '/search', desc: 'Search codebase (e.g. /search function foo)' },
-  { cmd: '/web', desc: 'Search the web (e.g. /web react 19 release date)' },
+  { cmd: '/search', desc: 'Search codebase (e.g. /search useEffect)' },
+  { cmd: '/web', desc: 'Search the web (e.g. /web vite 6 release date)' },
   { cmd: '/todo', desc: 'Add a todo task (e.g. /todo fix login bug)' },
-  { cmd: '/design', desc: 'Open Design Partner with 17 modes' },
+  { cmd: '/design', desc: 'Open Design Partner modes' },
   { cmd: '/share', desc: 'Copy session share link to clipboard' },
   { cmd: '/export', desc: 'Export session as Markdown' },
   { cmd: '/diagnostics', desc: 'Show session diagnostics' },
 ]
 
+const SUGGESTIONS = [
+  'Explain the structure of this codebase',
+  'Find a bug and propose a fix',
+  'Add error handling to the Express endpoints',
+  'Review my UI for accessibility issues',
+]
+
+function timeAgo(ts: number): string {
+  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
 export default function ChatPanel() {
-  const { state, activeSession, sendChat, dispatch, addMessage } = useStore()
+  const { state, activeSession, sendChat, stopChat, retryChat, dispatch, addMessage, toast, addTodo } = useStore()
   const { searchCode, webSearch, addCheckpoint, undoToCheckpoint } = useStore()
   const [input, setInput] = useState('')
   const [showCommands, setShowCommands] = useState(false)
   const [filteredCmds, setFilteredCmds] = useState(SLASH_COMMANDS)
+  const [cmdIndex, setCmdIndex] = useState(0)
   const [showDesign, setShowDesign] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [dragOver, setDragOver] = useState(false)
+
+  const MAX_FILES = 8
+  const MAX_FILE_BYTES = 20 * 1024 * 1024
+
+  const addFiles = (incoming: FileList | File[] | null) => {
+    if (!incoming) return
+    const next = [...pendingFiles]
+    for (const f of Array.from(incoming)) {
+      if (next.length >= MAX_FILES) { toast(`Max ${MAX_FILES} attachments per message`, 'error'); break }
+      if (f.size > MAX_FILE_BYTES) { toast(`${f.name} is larger than 20 MB`, 'error'); continue }
+      if (!next.some(p => p.name === f.name && p.size === f.size)) next.push(f)
+    }
+    setPendingFiles(next)
+  }
+
+  const removeFile = (name: string) => setPendingFiles(prev => prev.filter(f => f.name !== name))
 
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight
-  }, [activeSession?.messages])
+  }, [activeSession?.messages, state.loading])
 
   useEffect(() => { inputRef.current?.focus() }, [activeSession?.id])
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !showCommands) {
-        // Esc = rewind (undo to last checkpoint)
+      if (e.key === 'Escape') {
+        // Priority: slash palette > design modal > checkpoint undo
+        if (showCommands || showDesign) return
         if (!state.loading && activeSession) undoToCheckpoint()
       }
       if (e.ctrlKey && e.key === 'k') {
         e.preventDefault()
-        if (activeSession) dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'messages', value: [] })
+        if (activeSession) {
+          dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'messages', value: [] })
+          toast('Chat cleared', 'info')
+        }
       }
       if (e.ctrlKey && e.shiftKey && (e.key === 'p' || e.key === 'P')) {
         e.preventDefault()
@@ -57,15 +94,34 @@ export default function ChatPanel() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [showCommands, state.loading, activeSession, undoToCheckpoint, dispatch])
+  }, [showCommands, showDesign, state.loading, activeSession, undoToCheckpoint, dispatch, toast])
+
+  const growInput = () => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+  }
 
   const handleInput = (value: string) => {
     setInput(value)
+    growInput()
     if (value.startsWith('/')) {
-      setFilteredCmds(SLASH_COMMANDS.filter((c) => c.cmd.startsWith(value.toLowerCase())))
+      setFilteredCmds(SLASH_COMMANDS.filter((c) => c.cmd.startsWith(value.toLowerCase().split(' ')[0])))
+      setCmdIndex(0)
       setShowCommands(true)
     } else {
       setShowCommands(false)
+    }
+  }
+
+  const copyMessage = async (m: { id: string; content: string }) => {
+    try {
+      await navigator.clipboard.writeText(m.content)
+      setCopiedId(m.id)
+      setTimeout(() => setCopiedId(c => (c === m.id ? null : c)), 1500)
+    } catch {
+      toast('Could not copy', 'error')
     }
   }
 
@@ -74,101 +130,76 @@ export default function ChatPanel() {
     setInput('')
 
     if (cmd === '/help') {
-      const groups = [
-        { label: 'General', cmds: ['/help', '/clear', '/session', '/diagnostics'] },
-        { label: 'Agent', cmds: ['/agent', '/mode', '/model'] },
-        { label: 'Code', cmds: ['/search', '/web', '/todo', '/checkpoint', '/undo'] },
-        { label: 'Design', cmds: ['/design'] },
-        { label: 'Share', cmds: ['/share', '/export'] },
-      ]
-      addMessage({ id: Date.now().toString(), role: 'system', content: '**Slash Commands**\n\n' + groups.map(g => `**${g.label}**\n${g.cmds.map(c => `- \`${SLASH_COMMANDS.find(s => s.cmd === c)?.cmd}\` — ${SLASH_COMMANDS.find(s => s.cmd === c)?.desc}`).join('\n')}`).join('\n\n'), timestamp: Date.now() })
+      addMessage({ role: 'system', content: '**Slash Commands**\n\n' + SLASH_COMMANDS.map(c => `- \`${c.cmd}\` — ${c.desc}`).join('\n') })
       return
     }
-
     if (cmd === '/clear') {
       if (activeSession) dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'messages', value: [] })
       return
     }
-
     if (cmd === '/session') {
       if (!activeSession) return
-      addMessage({ id: Date.now().toString(), role: 'system', timestamp: Date.now(),
-        content: `**Session:** ${activeSession.name}\n**Agent:** ${activeSession.agent} (${activeSession.mode} mode)\n**Model:** ${activeSession.model}\n**Messages:** ${activeSession.messages.length}\n**Checkpoints:** ${activeSession.checkpoints.length}\n**Auto-accept:** ${activeSession.autoAccept ? 'ON' : 'OFF'}` })
+      addMessage({ role: 'system',
+        content: `**Session:** ${activeSession.name}\n**Agent:** ${activeSession.agent} (${activeSession.mode} mode)\n**Model:** ${activeSession.model}\n**Messages:** ${activeSession.messages.length}\n**Checkpoints:** ${activeSession.checkpoints.length}\n**Usage:** ${activeSession.usage.promptTokens + activeSession.usage.completionTokens} tokens · ~$${activeSession.usage.cost.toFixed(4)}` })
       return
     }
-
     if (cmd === '/diagnostics') {
       if (!activeSession) return
-      addMessage({ id: Date.now().toString(), role: 'system', timestamp: Date.now(),
-        content: `**Diagnostics**\n\n- Session: ${activeSession.name}\n- Agent: ${activeSession.agent}\n- Mode: ${activeSession.mode}\n- Model: ${activeSession.model}\n- Messages: ${activeSession.messages.length}\n- Checkpoints: ${activeSession.checkpoints.length}\n- Files indexed: ${state.files.length}\n- Auto-accept: ${activeSession.autoAccept ? 'ON' : 'OFF'}\n- Todos: ${state.todos.filter(t => !t.done).length} pending\n- Loading: ${state.loading}` })
+      addMessage({ role: 'system',
+        content: `**Diagnostics**\n\n- Session: ${activeSession.name}\n- Agent: ${activeSession.agent}\n- Mode: ${activeSession.mode}\n- Model: ${activeSession.model}\n- Messages: ${activeSession.messages.length}\n- Checkpoints: ${activeSession.checkpoints.length}\n- Files indexed: ${state.files.length}\n- Auto-accept: ${activeSession.autoAccept ? 'ON' : 'OFF'}\n- Backend: ${state.backend}\n- Catalog: ${state.modelsStatus} (${state.modelCatalog.length} models${state.modelsLive ? ', live' : ', fallback'})` })
       return
     }
-
-    if (cmd === '/checkpoint') {
-      addCheckpoint('Manual checkpoint')
-      return
-    }
-
-    if (cmd === '/undo') {
-      undoToCheckpoint()
-      return
-    }
+    if (cmd === '/checkpoint') { addCheckpoint('Manual checkpoint'); return }
+    if (cmd === '/undo') { undoToCheckpoint(); return }
+    if (cmd === '/design') { setShowDesign(true); return }
 
     if (cmd.startsWith('/model ')) {
       const model = cmd.slice(7).trim()
-      if (activeSession && model) dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'model', value: model })
+      if (!activeSession || !model) return
+      const known = state.modelCatalog.find(m => m.id === model)
+      dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'model', value: model })
+      toast(known ? `Model: ${known.name}` : `Model set to ${model} (not in catalog — verify on OpenRouter)`, known ? 'success' : 'info')
       return
     }
-
     if (cmd.startsWith('/agent ')) {
       const agent = cmd.slice(7).trim()
       const valid = ['planner', 'editor', 'explorer', 'debugger', 'reviewer']
       if (activeSession && valid.includes(agent)) dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'agent', value: agent })
+      else toast(`Unknown agent. Valid: ${valid.join(', ')}`, 'error')
       return
     }
-
     if (cmd.startsWith('/mode ')) {
       const mode = cmd.slice(6).trim() as 'plan' | 'build'
       if (activeSession && (mode === 'plan' || mode === 'build')) dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'mode', value: mode })
       return
     }
-
     if (cmd.startsWith('/search ')) {
       const query = cmd.slice(8).trim()
       if (query) searchCode(query)
       return
     }
-
     if (cmd.startsWith('/web ')) {
       const query = cmd.slice(5).trim()
       if (query) webSearch(query)
       return
     }
-
     if (cmd.startsWith('/todo ')) {
       const text = cmd.slice(6).trim()
-      if (text) dispatch({ type: 'ADD_TODO', todo: { id: Date.now().toString(), text, done: false } })
+      if (text) { addTodo(text); toast('Todo added', 'success') }
       return
     }
-
-    if (cmd === '/design') {
-      setShowDesign(true)
-      return
-    }
-
     if (cmd === '/share') {
       if (!activeSession) return
       const shareData = { name: activeSession.name, agent: activeSession.agent, mode: activeSession.mode, model: activeSession.model, messageCount: activeSession.messages.length, timestamp: Date.now() }
       const url = `${window.location.origin}/app?share=${btoa(JSON.stringify(shareData))}`
       try {
         await navigator.clipboard.writeText(url)
-        addMessage({ id: Date.now().toString(), role: 'system', content: `🔗 Share link copied to clipboard!\n\n\`${url}\``, timestamp: Date.now() })
+        toast('Share link copied to clipboard', 'success')
       } catch {
-        addMessage({ id: Date.now().toString(), role: 'system', content: `📋 Share URL:\n\`${url}\``, timestamp: Date.now() })
+        addMessage({ role: 'system', content: `Share URL:\n\`${url}\`` })
       }
       return
     }
-
     if (cmd === '/export') {
       if (!activeSession) return
       const md = [`# openPly Session: ${activeSession.name}`, `**Agent:** ${activeSession.agent} (${activeSession.mode} mode)`, `**Model:** ${activeSession.model}`, '', '---', '',
@@ -180,148 +211,264 @@ export default function ChatPanel() {
       URL.revokeObjectURL(url)
       return
     }
+    addMessage({ role: 'system', content: `Unknown command: \`${cmd}\`. Type \`/help\` for commands.` })
   }
 
   const handleSend = () => {
     const text = input.trim()
-    if (!text || state.loading || !activeSession) return
+    if ((!text && pendingFiles.length === 0) || !activeSession) return
+    if (state.loading) return
     setInput('')
     setShowCommands(false)
-    if (text.startsWith('/')) { executeCommand(text); return }
-    sendChat(text)
+    requestAnimationFrame(() => { if (inputRef.current) inputRef.current.style.height = 'auto' })
+    if (text.startsWith('/') && pendingFiles.length === 0) { executeCommand(text); return }
+    const files = pendingFiles
+    setPendingFiles([])
+    sendChat(text || 'Describe the attached file(s) and how I can use them.', files)
   }
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
-    if (e.key === 'Escape') setShowCommands(false)
-    if (e.key === 'Tab' && showCommands && filteredCmds.length > 0) {
-      e.preventDefault()
-      setInput(filteredCmds[0].cmd + ' ')
-      setShowCommands(false)
+    if (e.key === 'Escape') { e.preventDefault(); setShowCommands(false) }
+    if (showCommands && filteredCmds.length > 0) {
+      if (e.key === 'Tab' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        if (e.key === 'Tab') {
+          setInput(filteredCmds[cmdIndex].cmd + ' ')
+          setShowCommands(false)
+        } else {
+          setCmdIndex(i => Math.min(i + 1, filteredCmds.length - 1))
+        }
+      }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setCmdIndex(i => Math.max(i - 1, 0)) }
+      if (e.key === 'Enter' && e.shiftKey) { /* fall through to newline */ }
     }
   }
 
-  // Handle design mode selection
   const handleDesignMode = (modeId: string) => {
-    let component = ''
-    const designPrompts: Record<string, string> = {
-      audit: '🔍 Running design audit... scanning for visual issues, inconsistencies, and anti-patterns.',
-      checkup: '🏥 Running design checkup... traffic-light scores for layout, color, typography, spacing.',
-      smell: '👃 Detecting design smells... visual inconsistencies and anti-patterns.',
-      recolor: '🎨 Recoloring UI... building OKLCH color system with semantic roles and contrast checks.',
-      typeset: '🔤 Setting typography... establishing scale, hierarchy, and rhythm.',
-      spacing: '📐 Auditing spacing... ensuring consistent spacing and layout grid.',
-      icons: '⭐ Auditing icons... consistency check across the UI.',
-      redesign: '✨ Redesigning interface... complete visual transformation.',
-      relayout: '📋 Relayouting... reorganizing component tree and layout structure.',
-      finish: '🏁 Final polish... friction removal, accessibility checks, hardening.',
-      create: '🆕 Creating design from brief... reading your taste and building the page.',
-      access: '♿ Running accessibility audit... WCAG compliance check.',
-      responsive: '📱 Responsive review... checking breakpoints and layouts.',
-      dark: '🌙 Dark mode... implementing and reviewing dark theme.',
-      motion: '🎬 Motion audit... animation polish and performance.',
-      tokens: '🔧 Extracting design tokens... building reusable token system.',
-      review: '👁️ Full design review... structured feedback across all surfaces.',
-    }
-    const msg = designPrompts[modeId] || `🎨 Running ${modeId} mode...`
-    addMessage({ id: Date.now().toString(), role: 'system', content: msg, timestamp: Date.now() })
+    const prompt = DESIGN_PROMPTS[modeId]
+    if (prompt) sendChat(prompt)
+    setShowDesign(false)
   }
 
   if (!activeSession) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <div className="text-5xl mb-4 font-mono font-bold text-[#22D3EE]">ply&gt;</div>
-          <p className="text-[#64748b]">Create or select a session to get started.</p>
+          <div className="mb-3 font-mono text-4xl font-bold text-accent">ply&gt;</div>
+          <p className="text-xs text-faint">Create or select a session to get started.</p>
         </div>
       </div>
     )
   }
 
+  const lastAssistant = [...activeSession.messages].reverse().find(m => m.role === 'assistant')
+  const showTypingDots = state.loading && lastAssistant && !lastAssistant.content
+
   return (
-    <div className="flex h-full flex-col">
+    <div
+      className="relative flex min-h-0 flex-1 flex-col"
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(false) }}
+      onDrop={(e) => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files) }}
+    >
       {showDesign && <DesignPartner onSelectMode={handleDesignMode} onClose={() => setShowDesign(false)} />}
 
-      <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+      {dragOver && (
+        <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-accent/5 backdrop-blur-[1px]">
+          <div className="rounded-xl border-2 border-dashed border-accent/60 bg-overlay px-6 py-4 text-xs font-medium text-accent">
+            Drop files to attach
+          </div>
+        </div>
+      )}
+
+      <div ref={listRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3 sm:p-4">
         {activeSession.messages.length === 0 && (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center max-w-md">
-              <div className="text-5xl mb-4 font-mono font-bold text-[#22D3EE]">ply&gt;</div>
-              <p className="text-[#64748b]">Ask me anything about your codebase.<br />Type <code className="text-[#22D3EE]">/help</code> for commands or <code className="text-[#22D3EE]">/design</code> for design partner.</p>
-              <div className="mt-6 flex flex-wrap justify-center gap-2">
-                {['/design', '/search', '/web', '/todo', '/checkpoint', '/share'].map(cmd => (
-                  <button key={cmd} onClick={() => { setInput(cmd + ' '); inputRef.current?.focus() }} className="rounded-lg border border-[#1e293b] px-2.5 py-1.5 text-[10px] text-[#64748b] hover:border-[#22D3EE]/30 hover:text-[#22D3EE] transition-colors">{cmd}</button>
+          <div className="flex min-h-full items-center justify-center">
+            <div className="w-full max-w-md text-center">
+              <div className="mb-2 font-mono text-4xl font-bold text-accent">ply&gt;</div>
+              <p className="text-xs leading-relaxed text-faint">
+                Ask anything about your codebase. <code className="text-accent">/help</code> lists commands.
+              </p>
+              <p className="mt-2 text-[10px] text-faint">
+                {activeSession.model.split('/').pop()} · {state.backend === 'online' ? 'connected' : state.backend}
+              </p>
+              <div className="mt-5 grid grid-cols-1 gap-2 xs:grid-cols-2">
+                {SUGGESTIONS.map(s => (
+                  <button
+                    key={s}
+                    onClick={() => sendChat(s)}
+                    className="rounded-lg border border-border bg-surface px-3 py-2.5 text-left text-[11px] text-muted transition-colors hover:border-border-bright hover:text-text"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+                {['/design', '/search', '/web', '/todo'].map(cmd => (
+                  <button
+                    key={cmd}
+                    onClick={() => { setInput(cmd + ' '); inputRef.current?.focus() }}
+                    className="rounded-md border border-border px-2 py-1 font-mono text-[10px] text-faint transition-colors hover:border-accent/40 hover:text-accent"
+                  >
+                    {cmd}
+                  </button>
                 ))}
               </div>
             </div>
           </div>
         )}
-        {activeSession.messages.map((m) => (
-          <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
-              m.role === 'user' ? 'bg-[#22D3EE]/10 border border-[#22D3EE]/20 text-[#e2e8f0]'
-                : m.role === 'system' ? 'bg-[#f59e0b]/10 border border-[#f59e0b]/20 text-[#e2e8f0]'
-                : 'bg-[#1a1a35] border border-[#1e293b] text-[#e2e8f0]'
-            }`}>
-              {m.role !== 'user' && (
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#64748b]">
-                  {m.role === 'assistant' ? 'openPly' : 'system'}
+
+        {activeSession.messages.map((m) => {
+          const isErr = m.role === 'assistant' && m.content.startsWith('**Error**')
+          return (
+            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`group max-w-[88%] sm:max-w-[80%] ${
+                m.role === 'user'
+                  ? 'rounded-lg border border-accent/25 bg-accent/5 px-3.5 py-2.5'
+                  : m.role === 'system'
+                    ? 'rounded-lg border border-warn/20 bg-warn/5 px-3.5 py-2.5'
+                    : 'rounded-lg border border-border bg-surface px-3.5 py-2.5'
+              }`}>
+                <div className="mb-1.5 flex items-center gap-1.5 text-[10px] text-faint">
+                  {m.role === 'user' ? <User size={10} /> : m.role === 'system' ? <Terminal size={10} /> : <Bot size={10} className="text-accent" />}
+                  <span className="uppercase tracking-wider">{m.role === 'assistant' ? 'openply' : m.role}</span>
+                  <span>· {timeAgo(m.timestamp)}</span>
+                  <span className="flex-1" />
+                  {(m.role === 'assistant' && isErr) && (
+                    <button onClick={retryChat} className="flex items-center gap-1 rounded px-1 text-faint opacity-0 transition-opacity hover:text-accent group-hover:opacity-100" title="Retry">
+                      <RotateCcw size={10} /> retry
+                    </button>
+                  )}
+                  <button onClick={() => copyMessage(m)} className="rounded p-0.5 text-faint opacity-0 transition-opacity hover:text-text group-hover:opacity-100" title="Copy">
+                    {copiedId === m.id ? <Check size={11} className="text-success" /> : <Copy size={11} />}
+                  </button>
                 </div>
-              )}
-              <div className="prose prose-invert prose-sm max-w-none [&_pre]:rounded-lg [&_pre]:bg-[#0d1117] [&_pre]:p-4 [&_pre]:overflow-x-auto [&_code]:text-sm">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-                  {m.content || '...'}
-                </ReactMarkdown>
+                <div className="prose prose-invert prose-sm max-w-none text-[13px] leading-relaxed [&_pre]:rounded-md [&_pre]:border [&_pre]:border-border [&_pre]:bg-bg [&_pre]:p-3 [&_pre]:text-xs [&_code]:text-accent/90 [&_pre_code]:text-text [&_table]:text-xs [&_a]:text-accent">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                    {m.content || ' '}
+                  </ReactMarkdown>
+                  {state.loading && m.id === lastAssistant?.id && !isErr && (
+                    <span className="ml-0.5 inline-block h-3.5 w-[7px] animate-caret-blink bg-accent/70 align-text-bottom" />
+                  )}
+                </div>
+                {m.attachments && m.attachments.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {m.attachments.map((a) =>
+                      a.kind === 'image' ? (
+                        <a key={a.id} href={a.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-md border border-border hover:border-accent/50">
+                          <img src={a.url} alt={a.name} className="max-h-40 max-w-[220px] object-cover" loading="lazy" />
+                        </a>
+                      ) : (
+                        <a key={a.id} href={a.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-md border border-border bg-bg px-2 py-1 text-[10px] text-muted transition-colors hover:border-accent/40 hover:text-text">
+                          <FileText size={11} className="shrink-0 text-accent" />
+                          <span className="max-w-[160px] truncate">{a.name}</span>
+                          <span className="text-faint">{formatBytes(a.size)}</span>
+                        </a>
+                      ),
+                    )}
+                  </div>
+                )}
               </div>
-              {m.files && m.files.length > 0 && (
-                <div className="mt-2 border-t border-[#1e293b] pt-2 space-y-1">
-                  {m.files.map((f) => <div key={f.path} className="text-xs text-[#22D3EE]">📄 {f.path}</div>)}
-                </div>
-              )}
             </div>
-          </div>
-        ))}
-        {state.loading && (
+          )
+        })}
+
+        {showTypingDots && (
           <div className="flex justify-start">
-            <div className="rounded-xl border border-[#1e293b] bg-[#1a1a35] px-4 py-3">
+            <div className="rounded-lg border border-border bg-surface px-4 py-3">
               <div className="flex gap-1">
-                <span className="h-2 w-2 animate-bounce rounded-full bg-[#22D3EE]" style={{ animationDelay: '0ms' }} />
-                <span className="h-2 w-2 animate-bounce rounded-full bg-[#22D3EE]" style={{ animationDelay: '150ms' }} />
-                <span className="h-2 w-2 animate-bounce rounded-full bg-[#22D3EE]" style={{ animationDelay: '300ms' }} />
+                {[0, 150, 300].map(d => (
+                  <span key={d} className="h-1.5 w-1.5 animate-bounce rounded-full bg-accent" style={{ animationDelay: `${d}ms` }} />
+                ))}
               </div>
             </div>
           </div>
         )}
       </div>
 
-      <div className="border-t border-[#1e293b] p-4 relative">
+        <div className="relative shrink-0 border-t border-border bg-surface p-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => { addFiles(e.target.files); e.target.value = '' }}
+          />
         {showCommands && filteredCmds.length > 0 && (
-          <div className="absolute bottom-full left-4 right-4 mb-1 rounded-xl border border-[#1e293b] bg-[#0d0d20] shadow-xl overflow-hidden">
-            {filteredCmds.map((c) => (
-              <button key={c.cmd} onClick={() => { setInput(c.cmd + ' '); inputRef.current?.focus(); setShowCommands(false) }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-xs text-left hover:bg-[#1a1a35] transition-colors">
-                <code className="text-[#22D3EE] font-mono">{c.cmd}</code>
-                <span className="text-[#64748b]">{c.desc}</span>
+          <div className="absolute inset-x-3 bottom-full mb-1 animate-scale-in overflow-hidden rounded-lg border border-border-bright bg-overlay shadow-[0_16px_48px_rgba(0,0,0,0.6)]">
+            {filteredCmds.map((c, i) => (
+              <button
+                key={c.cmd}
+                onMouseEnter={() => setCmdIndex(i)}
+                onClick={() => { setInput(c.cmd + ' '); inputRef.current?.focus(); setShowCommands(false) }}
+                className={`flex w-full items-center gap-3 px-3 py-2 text-left text-[11px] transition-colors ${i === cmdIndex ? 'bg-elevated' : ''}`}
+              >
+                <code className="font-mono text-accent">{c.cmd}</code>
+                <span className="truncate text-faint">{c.desc}</span>
               </button>
             ))}
           </div>
         )}
-        <div className="flex gap-3">
-          <input
+        {pendingFiles.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {pendingFiles.map((f) => (
+              <span
+                key={`${f.name}-${f.size}`}
+                className="flex items-center gap-1.5 rounded-md border border-border bg-bg px-2 py-1 text-[10px] text-muted"
+              >
+                <FileText size={11} className="shrink-0 text-accent" />
+                <span className="max-w-[160px] truncate">{f.name}</span>
+                <span className="text-faint">{formatBytes(f.size)}</span>
+                <button onClick={() => removeFile(f.name)} className="text-faint transition-colors hover:text-danger" title={`Remove ${f.name}`}>
+                  <X size={11} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex items-end gap-2 rounded-lg border border-border bg-bg px-3 py-2 transition-colors focus-within:border-accent/50">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={state.loading}
+            title="Attach files or images"
+            aria-label="Attach files"
+            className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-faint transition-colors hover:bg-elevated hover:text-accent disabled:opacity-40"
+          >
+            <Paperclip size={14} />
+          </button>
+          <textarea
             ref={inputRef}
             value={input}
             onChange={(e) => handleInput(e.target.value)}
             onKeyDown={handleKey}
-            placeholder="Ask something or type / for commands..."
-            className="flex-1 rounded-xl border border-[#1e293b] bg-[#0a0a1a] px-4 py-3 text-sm text-[#e2e8f0] placeholder-[#64748b] outline-none transition-colors focus:border-[#22D3EE]"
+            onPaste={(e) => {
+              const files = Array.from(e.clipboardData.files)
+              if (files.length > 0) { e.preventDefault(); addFiles(files) }
+            }}
+            rows={1}
+            placeholder={state.loading ? 'Generating…' : 'Ask something — Enter to send, Shift+Enter for newline, / for commands'}
+            className="max-h-40 min-h-[28px] flex-1 resize-none self-center bg-transparent py-1 text-[13px] text-text placeholder-faint outline-none disabled:opacity-60"
             disabled={state.loading}
           />
-          <button onClick={handleSend} disabled={state.loading || !input.trim()}
-            className="flex h-[46px] w-[46px] items-center justify-center rounded-xl bg-[#22D3EE] text-[#0a0a1a] transition-all hover:bg-[#2dd4f8] disabled:opacity-40">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </button>
+          {state.loading ? (
+            <button
+              onClick={stopChat}
+              title="Stop generating"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-danger/15 text-danger transition-colors hover:bg-danger/25"
+            >
+              <Square size={13} />
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() && pendingFiles.length === 0}
+              title="Send"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent text-bg transition-all hover:brightness-110 disabled:opacity-30"
+            >
+              <Send size={13} />
+            </button>
+          )}
         </div>
       </div>
     </div>

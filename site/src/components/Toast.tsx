@@ -1,35 +1,39 @@
 import { useEffect } from 'react'
-import { useStore } from '../lib/store'
+import { CheckCircle2, Info, X, XCircle } from 'lucide-react'
+import { useStore, type Toast as ToastType } from '../lib/store'
 
-function ToastItem({ toast, onDismiss }: { toast: { id: string; type: string; message: string }; onDismiss: () => void }) {
+function ToastItem({ toast }: { toast: ToastType }) {
+  const { dispatch } = useStore()
+
   useEffect(() => {
-    const t = setTimeout(onDismiss, 4000)
+    const t = setTimeout(() => dispatch({ type: 'DISMISS_TOAST', id: toast.id }), 4000)
     return () => clearTimeout(t)
-  }, [onDismiss])
+  }, [toast.id, dispatch])
 
-  const color = toast.type === 'success' ? '#4ade80' : toast.type === 'error' ? '#f87171' : '#22D3EE'
-  const bg = toast.type === 'success' ? 'rgba(74,222,128,0.1)' : toast.type === 'error' ? 'rgba(248,113,113,0.1)' : 'rgba(34,211,238,0.1)'
+  const Icon = toast.kind === 'success' ? CheckCircle2 : toast.kind === 'error' ? XCircle : Info
+  const color = toast.kind === 'success' ? 'text-success' : toast.kind === 'error' ? 'text-danger' : 'text-accent'
 
   return (
-    <div
-      className="pointer-events-auto flex max-w-sm items-start gap-2 rounded-xl border px-3.5 py-2.5 text-xs shadow-xl"
-      style={{ borderColor: `${color}30`, background: bg, color }}
-    >
-      <span className="flex-1 break-words">{toast.message}</span>
-      <button onClick={onDismiss} className="opacity-50 transition-opacity hover:opacity-100">✕</button>
+    <div className="pointer-events-auto flex w-72 animate-fade-up items-start gap-2 rounded-lg border border-border-bright bg-overlay px-3 py-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+      <Icon size={14} className={`mt-px shrink-0 ${color}`} />
+      <p className="min-w-0 flex-1 break-words text-[11px] leading-snug text-text">{toast.text}</p>
+      <button
+        onClick={() => dispatch({ type: 'DISMISS_TOAST', id: toast.id })}
+        className="shrink-0 text-faint transition-colors hover:text-text"
+        aria-label="Dismiss"
+      >
+        <X size={12} />
+      </button>
     </div>
   )
 }
 
 export default function ToastHost() {
-  const { state, dispatch } = useStore()
+  const { state } = useStore()
   if (state.toasts.length === 0) return null
-
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-[100] flex flex-col gap-2">
-      {state.toasts.map(t => (
-        <ToastItem key={t.id} toast={t} onDismiss={() => dispatch({ type: 'DISMISS_TOAST', id: t.id })} />
-      ))}
+    <div className="pointer-events-none fixed bottom-8 right-3 z-[100] flex flex-col gap-2">
+      {state.toasts.map(t => <ToastItem key={t.id} toast={t} />)}
     </div>
   )
 }

@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react'
+import { ChevronRight, FileCode2, FolderClosed, FolderOpen, Loader2 } from 'lucide-react'
 
 interface Props {
   files: string[]
+  status?: 'idle' | 'loading' | 'ready' | 'error'
   activeFile: string | null
   onSelect: (path: string) => void
 }
@@ -13,27 +15,39 @@ interface TreeNode {
   isDir: boolean
 }
 
-export default function FileTree({ files, activeFile, onSelect }: Props) {
-  const [collapsed, setCollapsed] = useState(false)
-
+export default function FileTree({ files, status = 'ready', activeFile, onSelect }: Props) {
   const tree = useMemo(() => buildTree(files), [files])
 
+  if (status === 'loading') {
+    return (
+      <div className="flex h-full items-center justify-center gap-2 text-[11px] text-faint">
+        <Loader2 size={13} className="animate-spin" /> Loading files…
+      </div>
+    )
+  }
+
+  if (status === 'error') {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-1 p-4 text-center">
+        <p className="text-[11px] text-faint">Could not load files.</p>
+        <p className="text-[10px] text-faint">Is the backend running?</p>
+      </div>
+    )
+  }
+
+  if (files.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center p-4 text-center text-[11px] text-faint">
+        No files in this workspace
+      </div>
+    )
+  }
+
   return (
-    <div className="h-full overflow-y-auto p-3">
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="mb-2 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-[#64748b] hover:text-[#e2e8f0]"
-      >
-        <span className={`transition-transform ${collapsed ? '-rotate-90' : ''}`}>▼</span>
-        Explorer
-      </button>
-      {!collapsed && (
-        <div className="space-y-0.5">
-          {tree.map((node) => (
-            <TreeNodeView key={node.path} node={node} depth={0} activeFile={activeFile} onSelect={onSelect} />
-          ))}
-        </div>
-      )}
+    <div className="h-full overflow-y-auto py-2">
+      {tree.map((node) => (
+        <TreeNodeView key={node.path} node={node} depth={0} activeFile={activeFile} onSelect={onSelect} />
+      ))}
     </div>
   )
 }
@@ -41,20 +55,21 @@ export default function FileTree({ files, activeFile, onSelect }: Props) {
 function TreeNodeView({ node, depth, activeFile, onSelect }: {
   node: TreeNode; depth: number; activeFile: string | null; onSelect: (p: string) => void
 }) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(depth < 1)
 
   if (!node.isDir) {
     return (
       <button
         onClick={() => onSelect(node.path)}
-        className={`flex w-full items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors ${
+        className={`flex w-full items-center gap-1.5 rounded px-2 py-[3px] text-[11px] transition-colors ${
           activeFile === node.path
-            ? 'bg-[#22D3EE]/10 text-[#22D3EE]'
-            : 'text-[#64748b] hover:bg-[#1a1a35] hover:text-[#e2e8f0]'
+            ? 'bg-elevated text-accent'
+            : 'text-muted hover:bg-elevated/60 hover:text-text'
         }`}
-        style={{ paddingLeft: `${12 + depth * 16}px` }}
+        style={{ paddingLeft: `${8 + depth * 14}px` }}
       >
-        📄 {node.name}
+        <FileCode2 size={11} className="shrink-0 opacity-60" />
+        <span className="truncate">{node.name}</span>
       </button>
     )
   }
@@ -63,11 +78,12 @@ function TreeNodeView({ node, depth, activeFile, onSelect }: {
     <div>
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-xs text-[#94a3b8] hover:bg-[#1a1a35]"
-        style={{ paddingLeft: `${12 + depth * 16}px` }}
+        className="flex w-full items-center gap-1 rounded px-2 py-[3px] text-[11px] text-muted transition-colors hover:bg-elevated/60 hover:text-text"
+        style={{ paddingLeft: `${8 + depth * 14}px` }}
       >
-        <span className={`text-[10px] transition-transform ${open ? 'rotate-90' : ''}`}>▶</span>
-        📁 {node.name}
+        <ChevronRight size={10} className={`shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} />
+        {open ? <FolderOpen size={11} className="shrink-0 opacity-60" /> : <FolderClosed size={11} className="shrink-0 opacity-60" />}
+        <span className="truncate">{node.name}</span>
       </button>
       {open && node.children.map((child) => (
         <TreeNodeView key={child.path} node={child} depth={depth + 1} activeFile={activeFile} onSelect={onSelect} />
@@ -78,7 +94,6 @@ function TreeNodeView({ node, depth, activeFile, onSelect }: {
 
 function buildTree(files: string[]): TreeNode[] {
   const root: TreeNode[] = []
-  const dirMap = new Map<string, TreeNode[]>()
 
   for (const f of files) {
     const parts = f.split('/')

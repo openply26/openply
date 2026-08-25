@@ -1,3 +1,4 @@
+import { Loader2, WifiOff } from 'lucide-react'
 import { useStore } from '../lib/store'
 
 export default function OfflineBanner() {
@@ -6,17 +7,17 @@ export default function OfflineBanner() {
 
   if (state.backend === 'offline') {
     return (
-      <div className="flex h-7 shrink-0 items-center justify-center gap-2 border-b border-[#f87171]/20 bg-[#f87171]/10 text-[11px] text-[#f87171]">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#f87171]" />
-        Backend offline — chat unavailable. Retrying every 15s…
+      <div className="flex h-7 shrink-0 items-center justify-center gap-2 border-b border-danger/30 bg-danger/10 font-mono text-[10px] text-danger">
+        <WifiOff size={11} />
+        Backend offline — start it with <code className="rounded bg-danger/10 px-1">npm run server</code> or check your deployment
       </div>
     )
   }
 
   return (
-    <div className="flex h-7 shrink-0 items-center justify-center gap-2 border-b border-[#fbbf24]/20 bg-[#fbbf24]/5 text-[11px] text-[#fbbf24]">
-      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#fbbf24]" />
-      Connecting to backend…
+    <div className="flex h-7 shrink-0 items-center justify-center gap-2 border-b border-warn/30 bg-warn/10 font-mono text-[10px] text-warn">
+      <Loader2 size={11} className="animate-spin" />
+      {state.backend === 'waking' ? 'Waking backend (cold start)…' : 'Connecting to backend…'}
     </div>
   )
 }

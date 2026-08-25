@@ -1,88 +1,120 @@
-import { Square } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Bot, Bug, ChevronDown, ClipboardList, Eye, Lock, PencilLine, Search, Zap, ZapOff } from 'lucide-react'
 import { useStore } from '../lib/store'
 import ModelPicker from './ModelPicker'
 
 const AGENTS = [
-  { id: 'planner', label: 'Planner', icon: '📋', desc: 'Read-only analysis & planning' },
-  { id: 'editor', label: 'Editor', icon: '✏️', desc: 'Edit files & write code' },
-  { id: 'explorer', label: 'Explorer', icon: '🔍', desc: 'Search & explore codebase' },
-  { id: 'debugger', label: 'Debugger', icon: '🐛', desc: 'Find & fix bugs' },
-  { id: 'reviewer', label: 'Reviewer', icon: '👁️', desc: 'Review & suggest improvements' },
+  { id: 'planner', label: 'Planner', icon: ClipboardList, desc: 'Read-only analysis & planning' },
+  { id: 'editor', label: 'Editor', icon: PencilLine, desc: 'Edit files & write code' },
+  { id: 'explorer', label: 'Explorer', icon: Search, desc: 'Search & explore codebase' },
+  { id: 'debugger', label: 'Debugger', icon: Bug, desc: 'Find & fix bugs' },
+  { id: 'reviewer', label: 'Reviewer', icon: Eye, desc: 'Review & suggest improvements' },
 ]
 
 export default function AgentBar() {
-  const { state, dispatch, activeSession, stopStreaming } = useStore()
+  const { state, dispatch, activeSession } = useStore()
+  const [agentOpen, setAgentOpen] = useState(false)
+  const agentRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!agentOpen) return
+    const onDown = (e: MouseEvent) => {
+      if (agentRef.current && !agentRef.current.contains(e.target as Node)) setAgentOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setAgentOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [agentOpen])
 
   if (!activeSession) return null
 
+  const currentAgent = AGENTS.find(a => a.id === activeSession.agent) || AGENTS[0]
+
   return (
-    <div className="flex items-center gap-3 px-3 py-1.5 border-b border-[#1e293b] bg-[#0f0f24]/50">
-      {/* Plan/Build toggle */}
-      <div className="flex rounded-lg border border-[#1e293b] overflow-hidden text-xs">
-        <button
-          onClick={() => dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'mode', value: 'plan' })}
-          className={`px-3 py-1.5 transition-colors ${activeSession.mode === 'plan' ? 'bg-[#22D3EE]/20 text-[#22D3EE]' : 'text-[#64748b] hover:text-[#e2e8f0]'}`}
-        >Plan</button>
-        <button
-          onClick={() => dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'mode', value: 'build' })}
-          className={`px-3 py-1.5 transition-colors ${activeSession.mode === 'build' ? 'bg-[#22D3EE]/20 text-[#22D3EE]' : 'text-[#64748b] hover:text-[#e2e8f0]'}`}
-        >Build</button>
+    <div className="flex h-9 shrink-0 items-center gap-2 overflow-x-auto border-b border-border bg-surface px-2 sm:px-3">
+      {/* Plan/Build segmented toggle */}
+      <div className="flex shrink-0 rounded-md border border-border text-[11px]">
+        {(['plan', 'build'] as const).map((mode) => (
+          <button
+            key={mode}
+            onClick={() => dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'mode', value: mode })}
+            aria-pressed={activeSession.mode === mode}
+            className={`px-2.5 py-1 capitalize transition-colors ${
+              activeSession.mode === mode ? 'bg-elevated text-accent' : 'text-faint hover:text-muted'
+            }`}
+          >
+            {mode}
+          </button>
+        ))}
       </div>
 
-      <div className="w-px h-5 bg-[#1e293b]" />
+      <div className="h-4 w-px shrink-0 bg-border" />
 
-      {/* Agent selector */}
-      <div className="relative group">
-        <button className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[#94a3b8] hover:bg-[#1a1a35] hover:text-[#e2e8f0] transition-colors">
-          <span>{AGENTS.find(a => a.id === activeSession.agent)?.icon || '🤖'}</span>
-          <span>{AGENTS.find(a => a.id === activeSession.agent)?.label || activeSession.agent}</span>
-          <span className="text-[8px] opacity-50">▼</span>
+      {/* Agent selector (click popover) */}
+      <div ref={agentRef} className="relative shrink-0">
+        <button
+          onClick={() => setAgentOpen(o => !o)}
+          aria-haspopup="menu"
+          aria-expanded={agentOpen}
+          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-muted transition-colors hover:bg-elevated hover:text-text"
+        >
+          <currentAgent.icon size={12} />
+          <span>{currentAgent.label}</span>
+          <ChevronDown size={11} className={`transition-transform ${agentOpen ? 'rotate-180' : ''}`} />
         </button>
-        <div className="absolute top-full left-0 mt-1 w-56 rounded-xl border border-[#1e293b] bg-[#0d0d20] shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
-          <div className="p-2 space-y-0.5">
+        {agentOpen && (
+          <div role="menu" className="absolute left-0 top-full z-50 mt-1.5 w-60 animate-scale-in rounded-lg border border-border-bright bg-overlay p-1 shadow-[0_16px_48px_rgba(0,0,0,0.6)]">
             {AGENTS.map((a) => (
               <button
                 key={a.id}
-                onClick={() => dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'agent', value: a.id })}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-left transition-colors ${activeSession.agent === a.id ? 'bg-[#22D3EE]/10 text-[#22D3EE]' : 'text-[#94a3b8] hover:bg-[#1a1a35] hover:text-[#e2e8f0]'}`}
+                role="menuitem"
+                onClick={() => {
+                  dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'agent', value: a.id })
+                  setAgentOpen(false)
+                }}
+                className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors ${
+                  activeSession.agent === a.id ? 'bg-accent/10 text-accent' : 'text-muted hover:bg-elevated hover:text-text'
+                }`}
               >
-                <span>{a.icon}</span>
-                <div><div className="font-medium">{a.label}</div><div className="text-[10px] opacity-60">{a.desc}</div></div>
+                <a.icon size={14} className="shrink-0" />
+                <span className="min-w-0">
+                  <span className="block text-[11px] font-medium">{a.label}</span>
+                  <span className="block truncate text-[10px] text-faint">{a.desc}</span>
+                </span>
               </button>
             ))}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Auto-accept / YOLO toggle */}
+      {/* Auto-accept toggle */}
       <button
         onClick={() => dispatch({ type: 'SET_SESSION_FIELD', sessionId: activeSession.id, field: 'autoAccept', value: !activeSession.autoAccept })}
-        className={`rounded-lg px-2.5 py-1.5 text-[10px] font-medium transition-colors ${
+        aria-pressed={activeSession.autoAccept}
+        title={activeSession.autoAccept ? 'Auto-accept ON' : 'Auto-accept OFF'}
+        className={`flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
           activeSession.autoAccept
-            ? 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/30'
-            : 'text-[#64748b] hover:bg-[#1a1a35] border border-transparent'
+            ? 'border border-warn/40 bg-warn/10 text-warn'
+            : 'border border-transparent text-faint hover:bg-elevated hover:text-muted'
         }`}
-        title={activeSession.autoAccept ? 'Auto-accept ON — files saved without confirmation' : 'Auto-accept OFF — requires confirmation'}
       >
-        {activeSession.autoAccept ? '⚡ YOLO' : '✓ Confirm'}
+        {activeSession.autoAccept ? <Zap size={11} /> : <ZapOff size={11} />}
+        <span className="hidden xs:inline">{activeSession.autoAccept ? 'yolo' : 'confirm'}</span>
       </button>
+
+      {activeSession.mode === 'plan' && (
+        <span className="flex shrink-0 items-center gap-1 rounded border border-warn/40 bg-warn/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-warn">
+          <Lock size={9} /> read-only
+        </span>
+      )}
 
       <div className="flex-1" />
 
-      {/* Streaming stop button */}
-      {state.streaming && (
-        <button
-          onClick={stopStreaming}
-          className="flex items-center gap-1.5 rounded-lg border border-[#f87171]/30 bg-[#f87171]/10 px-2.5 py-1.5 text-[10px] font-medium text-[#f87171] transition-colors hover:bg-[#f87171]/20"
-          title="Stop generation"
-        >
-          <Square size={10} /> Stop
-        </button>
-      )}
-
-      {/* Model picker */}
       <ModelPicker />
-      {activeSession.mode === 'plan' && <span className="rounded border border-[#f59e0b]/30 bg-[#f59e0b]/10 px-2 py-0.5 text-[10px] text-[#f59e0b]">Read-only</span>}
     </div>
   )
 }

@@ -61,9 +61,9 @@ export default function VSCodeInstall() {
         </div>
 
         {/* Code actions */}
-        <div className="mx-auto mt-8 sm:mt-10 max-w-sm sm:max-w-[560px] text-center rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-6">
+        <div className="mx-auto mt-8 sm:mt-10 max-w-[560px] text-center rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-6">
           <div className="text-[10px] font-semibold uppercase tracking-widest text-[#5a5a8a] mb-3 sm:mb-4">Right-click code for</div>
-          <div className="flex flex-col items-center sm:grid sm:justify-items-center sm:grid-cols-1 lg:grid-cols-2 gap-2.5 sm:gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {[
               'Explain this code',
               'Refactor this code',

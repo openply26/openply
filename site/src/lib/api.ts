@@ -1,10 +1,20 @@
-const API_BASE = import.meta.env.VITE_API_URL || ''
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
+
+export interface Attachment {
+  id: string
+  kind: 'image' | 'file'
+  name: string
+  path: string
+  url: string
+  size: number
+}
 
 export interface ChatMessage {
   id: string
   role: 'user' | 'assistant' | 'system'
   content: string
   files?: { path: string; content: string }[]
+  attachments?: Attachment[]
   timestamp: number
 }
 
@@ -19,7 +29,6 @@ export interface ORModel {
 
 export interface HealthInfo {
   ok: boolean
-  status?: string
   openrouterConfigured: boolean
   defaultModel: string
   uptime: number
@@ -67,7 +76,7 @@ export async function checkHealth(timeoutMs = 5000): Promise<HealthInfo> {
 }
 
 export async function fetchModels(): Promise<{ models: ORModel[]; live: boolean }> {
-  const res = await fetchWithTimeout(`${API_BASE}/api/models`, {}, 10000)
+  const res = await fetchWithTimeout(`${API_BASE}/api/models`, {}, 8000)
   if (!res.ok) throw new ApiError(`Could not load models (${res.status})`, 'models')
   const data = await res.json()
   return { models: data.models || [], live: Boolean(data.live) }
@@ -81,18 +90,64 @@ export interface ChatStreamHandlers {
   signal?: AbortSignal
 }
 
+// ---------- Uploads ----------
+
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024 // must match server limit
+
+function readAsDataURL(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(new Error(`Could not read ${file.name}`))
+    reader.readAsDataURL(file)
+  })
+}
+
+export function isImageFile(file: File): boolean {
+  return file.type.startsWith('image/') && !file.type.includes('svg')
+}
+
+export async function uploadFile(file: File): Promise<Attachment> {
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new Error(`${file.name} is larger than ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB`)
+  }
+  const dataUrl = await readAsDataURL(file)
+  const res = await fetch(`${API_BASE}/api/upload`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: file.name, type: file.type, data: dataUrl }),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new ApiError(json.error || `Upload failed (${res.status})`, 'upload')
+  return {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+    kind: json.kind === 'image' ? 'image' : 'file',
+    name: json.name || file.name,
+    path: json.path,
+    url: json.url,
+    size: json.size ?? file.size,
+  }
+}
+
+export function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  return `${(n / 1024 / 1024).toFixed(1)} MB`
+}
+
 export async function chatStream(
   prompt: string,
   history: ChatMessage[],
   model: string,
   handlers: ChatStreamHandlers,
+  images: string[] = [],
 ): Promise<void> {
   let res: Response
   try {
     res = await fetch(`${API_BASE}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, history, model }),
+      body: JSON.stringify({ prompt, history, model, images }),
       signal: handlers.signal,
     })
   } catch (err: any) {
@@ -140,19 +195,6 @@ export async function chatStream(
   }
 }
 
-// Backward-compatible wrapper (apiKey param ignored — server holds the key)
-export async function sendMessage(
-  prompt: string,
-  history: ChatMessage[],
-  model: string,
-  _apiKey: string = '',
-  onChunk: (text: string) => void,
-  onDone: () => void,
-  onError: (err: string) => void,
-): Promise<void> {
-  await chatStream(prompt, history, model, { onChunk, onDone, onError: (e) => onError(e.message) })
-}
-
 let cachedFiles: string[] | null = null
 
 export function clearFileCache() { cachedFiles = null }
@@ -168,7 +210,7 @@ export async function listFiles(): Promise<string[]> {
 
 export async function readFile(path: string): Promise<string> {
   const res = await fetchWithTimeout(`${API_BASE}/api/files/${encodeURIComponent(path)}`, {}, 15000)
-  if (!res.ok) throw new Error('File not found')
+  if (!res.ok) throw new ApiError(`Could not read ${path}`, 'file')
   return res.text()
 }
 
