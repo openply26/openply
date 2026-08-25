@@ -111,7 +111,6 @@ export async function showProcessingAnimation(label: string): Promise<() => void
     console.log()
   }
 }
-}
 
 export function showEditAnimation(filePath: string): void {
   const frames = ['✍ ', '✎ ', '✏ ', '✐ ']
