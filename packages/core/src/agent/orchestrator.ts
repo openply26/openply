@@ -6,7 +6,7 @@ import { writeFileContent } from '../fs/writer'
 import { findProjectFiles, searchFiles } from '../fs/search'
 import { runBash } from '../bash/executor'
 import { generateDiff, formatDiff } from '../utils/diff'
-import { info, success, warn, renderDiff } from '../utils/display'
+import { info, success, warn, dim, renderDiff } from '../utils/display'
 import { showProcessingAnimation, showEditAnimation, pauseProcessingAnimation, resumeProcessingAnimation } from '../utils/splash'
 import { loadProjectAgents } from './loader'
 import { loadKnowledge } from '../knowledge/loader'
@@ -513,7 +513,7 @@ ${toolDocs}`
       if (open >= 0) {
         const visible = buf.slice(0, open)
         if (visible) process.stdout.write(visible)
-        buf = buf.slice(open)
+        buf = ''
         printing = false
         streamedAny = streamedAny || visible.length > 0
         return
@@ -566,6 +566,21 @@ ${toolDocs}`
 
         const result = await this.executeToolCall(call)
         edits.push(...result.edits)
+
+        if (call.name === 'run_command') {
+          const lines = result.output.split('\n').filter(l => l.trim())
+          const preview = lines.slice(0, 10).join('\n')
+          console.log(dim(`  ┌─ ${call.args.command}`))
+          if (preview) console.log(dim(preview.split('\n').map(l => `  │ ${l}`).join('\n')))
+          if (lines.length > 10) console.log(dim(`  │ … +${lines.length - 10} more lines`))
+        } else if (call.name === 'read_files') {
+          console.log(dim(`  ✓ read ${String(call.args.paths).split(',').length} file(s)`))
+        } else if (call.name === 'search_code') {
+          const count = result.output.split('\n').length - 1
+          console.log(dim(`  ✓ search: ${count} match(es)`))
+        } else if (call.name === 'write_file' || call.name === 'propose_write_file') {
+          console.log(dim(`  ✓ wrote ${call.args.path}`))
+        }
 
         allMessages.push({
           role: 'user',

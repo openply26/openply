@@ -1,6 +1,6 @@
 {
   "name": "@openply/core",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "description": "openPly core: shared types, LLM client, orchestrator, security",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
