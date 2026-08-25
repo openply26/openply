@@ -1,12 +1,14 @@
 {
   "name": "@openply/mcp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "openPly MCP server — expose agents as tools for Claude Desktop, Cursor, and other MCP clients",
   "main": "./dist/index.js",
   "bin": {
     "openply-mcp": "./dist/index.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --format cjs --outDir dist",
     "dev": "tsup src/index.ts --format cjs --outDir dist --watch",
@@ -22,4 +24,3 @@
   },
   "license": "MIT"
 }
-

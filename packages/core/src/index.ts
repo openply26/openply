@@ -64,3 +64,18 @@ export type { AppStack } from './web-builder/generator'
 
 // Plugins
 export { discoverPlugins, scaffoldPlugin, getPluginTools, getRegisteredPlugins } from './plugins/index'
+
+// Context pruning
+export { pruneMessages, summarizeWithLLM, estimateTokens, estimateMessagesTokens } from './context/pruner'
+
+// Skills
+export { discoverSkills, renderSkillList } from './skills/loader'
+export type { Skill } from './skills/loader'
+
+// MCP
+export { McpClient, mcpClient } from './mcp/client'
+export type { McpTool } from './mcp/client'
+
+// Hooks
+export { runFileChangeHooks } from './hooks/runner'
+export type { HookResult } from './hooks/runner'

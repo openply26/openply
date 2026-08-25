@@ -1,6 +1,6 @@
 {
   "name": "openply-monorepo",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "openPly monorepo — free, local-first AI coding assistant",
   "workspaces": [
@@ -18,8 +18,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
   "devDependencies": {
-    "turbo": "^2.0.0",
     "prettier": "^3.0.0",
+    "turbo": "^2.0.0",
     "typescript": "^5.5.0"
   },
   "license": "MIT"

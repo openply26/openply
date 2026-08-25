@@ -1,5 +1,5 @@
 import { createInterface } from 'readline'
-import { Config, Message, LLMClient, Orchestrator, getAd, createSession, addMessage, getMessages, findProjectFiles, info, success, warn, error, renderAd, dim, runBash, getAvailableModels, scaffoldProject, showSplash, showProcessingAnimation } from '@openply/core'
+import { Config, Message, LLMClient, Orchestrator, getAd, createSession, addMessage, getMessages, findProjectFiles, info, success, warn, error, renderAd, dim, runBash, getAvailableModels, scaffoldProject, showSplash, showProcessingAnimation, discoverSkills, renderSkillList, mcpClient } from '@openply/core'
 import chalk from 'chalk'
 
 const HELP_TEXT = `
@@ -11,9 +11,12 @@ openPly Commands:
   /init             Create knowledge.md + .agents/ in current project
   /config           Show current config
   /model            Switch model
+  /skills           List available skills (SKILL.md)
+  /mcp              Show MCP server tools
   /exit             Quit
 
 Use @AgentName to invoke a custom agent from .agents/
+Type while openPly works to steer it mid-task.
 
 Just type what you want and openPly will do it.
 `
@@ -21,10 +24,12 @@ Just type what you want and openPly will do it.
 export async function startRepl(config: Config, initialPrompt?: string, _session?: unknown, version?: string): Promise<void> {
   const sessionId = createSession('openPly session')
   const history: Message[] = []
+  let busy = false
+  let currentOrch: Orchestrator | null = null
 
   await showSplash(config.adEnabled)
 
-  info(`v${version || '0.3.2'} · ${config.mode === 'local' ? 'local mode' : config.mode === 'cloud' ? 'cloud mode' : 'auto mode'}`)
+  info(`v${version || '0.4.0'} · ${config.mode === 'local' ? 'local mode' : config.mode === 'cloud' ? 'cloud mode' : 'auto mode'}`)
   info('type /help for commands')
 
   if (initialPrompt) {
@@ -38,59 +43,45 @@ export async function startRepl(config: Config, initialPrompt?: string, _session
     prompt: chalk.cyan('ply> '),
   })
 
-  rl.prompt()
-
-  for await (const line of rl) {
+  rl.on('line', async (line: string) => {
     const input = line.trim()
-    if (!input) { rl.prompt(); continue }
+    if (!input) { rl.prompt(); return }
 
-    if (input.startsWith('/')) {
-      handleCommand(input, rl, config, history, sessionId)
-      continue
+    if (busy && currentOrch && !input.startsWith('/')) {
+      currentOrch.steer(input)
+      return
+    }
+    if (busy) {
+      warn('Busy — wait for the current task or type a steering message')
+      return
     }
 
-    await processPrompt(input, config, history, sessionId)
+    if (input.startsWith('/')) {
+      handleCommand(input, rl, config, history, sessionId, version || '0.4.0', () => { busy = false; currentOrch = null })
+      return
+    }
+
+    busy = true
+    await processPrompt(input, config, history, sessionId, orch => { currentOrch = orch })
+    busy = false
+    currentOrch = null
     rl.prompt()
-  }
+  })
+
+  rl.prompt()
 }
 
-async function processPrompt(prompt: string, config: Config, history: Message[], sessionId: string): Promise<void> {
+async function processPrompt(prompt: string, config: Config, history: Message[], sessionId: string, onOrchestrator?: (o: Orchestrator) => void): Promise<void> {
   const cwd = process.cwd()
   addMessage(sessionId, { role: 'user', content: prompt, timestamp: Date.now() })
   history.push({ role: 'user', content: prompt, timestamp: Date.now() })
 
-  let llm: LLMClient
-
-  if (config.mode === 'local' || config.mode === 'auto') {
-    try {
-      llm = LLMClient.createLocal()
-      if (config.mode === 'local') info('Using local model...')
-    } catch {
-      if (config.mode === 'local') {
-        warn('Local model unavailable. Install Ollama: https://ollama.com')
-        history.push({ role: 'assistant', content: 'Local model unavailable.', timestamp: Date.now() })
-        return
-      }
-      // auto mode: fall through to cloud
-    }
-  }
-
-  if (!llm) {
-    const apiKey = config.openRouterKey || process.env.OPENROUTER_API_KEY
-    if (!apiKey) {
-      warn('No API key found. Set OPENROUTER_API_KEY or use --local mode.')
-      warn('For local mode, install Ollama and run: openply --local')
-      history.push({ role: 'assistant', content: 'No API key configured.', timestamp: Date.now() })
-      return
-    }
-    llm = new LLMClient(config.model, apiKey, {
-      provider: 'openrouter',
-      fallbackChain: config.fallbackModels || [],
-    })
-  }
+  const llm = createLocalOrCloudLLM(config)
+  if (!llm) return
 
   const context = { cwd, files: await findProjectFiles(cwd), prompt, history, config }
   const orchestrator = new Orchestrator(llm, context)
+  onOrchestrator?.(orchestrator)
   await orchestrator.init()
 
   try {
@@ -114,7 +105,37 @@ async function processPrompt(prompt: string, config: Config, history: Message[],
   }
 }
 
-function handleCommand(input: string, rl: any, config: Config, history: Message[], sessionId: string): void {
+function createLocalOrCloudLLM(config: Config): LLMClient | null {
+  const groqKey = config.groqKey || process.env.GROQ_API_KEY
+  const openRouterKey = config.openRouterKey || process.env.OPENROUTER_API_KEY
+
+  if (config.mode === 'local') {
+    return LLMClient.createLocal()
+  }
+
+  if (config.mode === 'auto') {
+    if (groqKey) return LLMClient.createGroq(groqKey)
+    if (openRouterKey) {
+      return new LLMClient(config.model, openRouterKey, {
+        provider: 'openrouter',
+        fallbackChain: config.fallbackModels || [],
+      })
+    }
+    return LLMClient.createLocal()
+  }
+
+  if (groqKey) return LLMClient.createGroq(groqKey)
+  if (openRouterKey) {
+    return new LLMClient(config.model, openRouterKey, {
+      provider: 'openrouter',
+      fallbackChain: config.fallbackModels || [],
+    })
+  }
+  warn('No API key found. Run: openply config --set groqKey=<key> or openply config --set openRouterKey=<key>')
+  return null
+}
+
+function handleCommand(input: string, rl: any, config: Config, history: Message[], sessionId: string, version: string, onNew: () => void): void {
   const [cmd, ...args] = input.slice(1).split(' ')
 
   switch (cmd) {
@@ -123,13 +144,16 @@ function handleCommand(input: string, rl: any, config: Config, history: Message[
       break
     case 'exit':
     case 'quit':
+      mcpClient.disconnect()
       info('Goodbye!')
       process.exit(0)
     case 'new':
       info('Starting new session...')
+      mcpClient.disconnect()
       rl.close()
+      onNew()
       startRepl(config, undefined, undefined, version)
-      break
+      return
     case 'init':
       scaffoldProject(process.cwd())
       break
@@ -144,7 +168,24 @@ function handleCommand(input: string, rl: any, config: Config, history: Message[
     case 'model': {
       const models = getAvailableModels('full')
       console.log('\nAvailable models:')
-      models.forEach((m, i) => console.log(`  ${i + 1}. ${m.id}`))
+      models.forEach((m, i) => console.log(`  ${i + 1}. ${m.id} — ${m.displayName}`))
+      console.log(`\nCurrent: ${config.model}\nSwitch: openply config --set model=<id>`)
+      break
+    }
+    case 'skills': {
+      const skills = discoverSkills(process.cwd())
+      console.log(`\nSkills:\n${renderSkillList(skills)}`)
+      break
+    }
+    case 'mcp': {
+      const tools = mcpClient.getTools()
+      if (!mcpClient.isConnected()) {
+        warn('MCP not connected. Add servers to .openply/mcp.json:')
+        console.log('  { "servers": { "name": { "command": "npx", "args": ["-y", "@some/mcp-server"] } } }')
+      } else {
+        console.log(`\nMCP tools (${tools.length}):`)
+        tools.forEach(t => console.log(`  ${t.name} — ${t.description}`))
+      }
       break
     }
     default:

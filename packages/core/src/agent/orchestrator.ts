@@ -14,6 +14,11 @@ import { getBuiltinAgents } from '../registry/registry'
 import { sanitizeUserInput } from '../security'
 import { getPluginTools, getPluginHooks } from '../plugins/index'
 import { BUILTIN_AGENT_IMPLS } from './agents'
+import { pruneMessages, summarizeWithLLM, estimateMessagesTokens } from '../context/pruner'
+import { discoverSkills, type Skill } from '../skills/loader'
+import { mcpClient } from '../mcp/client'
+import { runFileChangeHooks } from '../hooks/runner'
+import { createInterface } from 'readline'
 
 const CORE_TOOLS = ['read_file', 'write_file', 'edit_file', 'run_command', 'search_code', 'done']
 
@@ -88,6 +93,33 @@ const TOOL_DEFINITIONS = [
   {
     type: 'function' as const,
     function: {
+      name: 'ask_user',
+      description: 'Ask the user a clarifying question with optional multiple-choice options. Use when requirements are ambiguous.',
+      parameters: {
+        type: 'object',
+        properties: {
+          question: { type: 'string', description: 'The question to ask' },
+          options: { type: 'string', description: 'Optional choices separated by | (e.g. "yes|no|maybe")' },
+        },
+        required: ['question'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'skill',
+      description: 'Load a named skill\'s full instructions into context. Skills are reusable instruction packs in .agents/skills/ or ~/.openply/skills/',
+      parameters: {
+        type: 'object',
+        properties: { name: { type: 'string', description: 'Skill name' } },
+        required: ['name'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
       name: 'done',
       description: 'Signal that the task is complete',
       parameters: {
@@ -113,6 +145,9 @@ export class Orchestrator {
   private projectAgents: AgentDefinition[]
   private memory: ConversationMemory
   private conversationHistory: Message[]
+  private skills: Skill[]
+  private steeringQueue: string[]
+  private contextBudgetTokens: number
 
   constructor(llm: LLMClient, context: AgentContext) {
     this.llm = llm
@@ -121,11 +156,45 @@ export class Orchestrator {
     this.projectAgents = []
     this.memory = { summary: '', keyDecisions: [], filesModified: [], errorsEncountered: [] }
     this.conversationHistory = []
+    this.skills = []
+    this.steeringQueue = []
+    this.contextBudgetTokens = 60_000
   }
 
   async init(): Promise<void> {
     this.knowledge = await loadKnowledge(this.context.cwd)
     this.projectAgents = await loadProjectAgents(this.context.cwd)
+    this.skills = discoverSkills(this.context.cwd)
+    await mcpClient.connect(this.context.cwd)
+  }
+
+  steer(text: string): void {
+    this.steeringQueue.push(text)
+  }
+
+  private drainSteering(allMessages: Message[]): void {
+    while (this.steeringQueue.length > 0) {
+      const msg = this.steeringQueue.shift()!
+      info(`Steering: ${msg}`)
+      allMessages.push({ role: 'user', content: `[User steering mid-task]: ${msg}` })
+    }
+  }
+
+  private async fitContext(allMessages: Message[]): Promise<void> {
+    const pruned = pruneMessages(allMessages, this.contextBudgetTokens)
+    if (pruned.droppedCount > 0) {
+      allMessages.length = 0
+      allMessages.push(...pruned.messages)
+      return
+    }
+    if (estimateMessagesTokens(allMessages) > this.contextBudgetTokens * 1.3) {
+      try {
+        const summarized = await summarizeWithLLM(allMessages, msgs => this.llm.chatSync(msgs), this.contextBudgetTokens)
+        allMessages.length = 0
+        allMessages.push(...summarized)
+        info('Context summarized to fit budget')
+      } catch { }
+    }
   }
 
   async run(userPrompt: string): Promise<{ edits: FileEdit[]; review: ReviewResult | null }> {
@@ -160,8 +229,22 @@ export class Orchestrator {
     }
 
     done()
+    await this.runHooks(result.edits)
     this.updateMemory(enrichedPrompt, result.edits)
     return result
+  }
+
+  private async runHooks(edits: FileEdit[]): Promise<void> {
+    if (edits.length === 0) return
+    try {
+      const hooks = await runFileChangeHooks(this.context.cwd, edits)
+      const failed = hooks.filter(h => h.failed)
+      if (failed.length > 0) {
+        for (const h of failed) {
+          warn(`Hook ${h.script} failed:\n${h.output.split('\n').slice(-8).join('\n')}`)
+        }
+      }
+    } catch { }
   }
 
   private async runAgentSteps(
@@ -222,7 +305,17 @@ export class Orchestrator {
   }
 
   private getToolsForAgent(agentMention?: AgentDefinition | null) {
-    if (!agentMention) return TOOL_DEFINITIONS
+    if (!agentMention) {
+      const mcpDefs = mcpClient.getTools().map(t => ({
+        type: 'function' as const,
+        function: {
+          name: t.name,
+          description: t.description,
+          parameters: t.inputSchema as any,
+        },
+      }))
+      return [...TOOL_DEFINITIONS, ...mcpDefs]
+    }
     const allowedTools = agentMention.toolNames || CORE_TOOLS
     const pluginTools = getPluginTools()
     const pluginDefs = pluginTools.map(t => ({
@@ -245,6 +338,15 @@ export class Orchestrator {
 
     if (this.knowledge) {
       prompt += `\n\n## Project Knowledge\n${this.knowledge}`
+    }
+
+    if (this.skills.length > 0) {
+      prompt += `\n\n## Available Skills (load with the skill tool)\n${this.skills.map(s => `- ${s.name}: ${s.description || 'no description'}`).join('\n')}`
+    }
+
+    const mcpTools = mcpClient.getTools()
+    if (mcpTools.length > 0) {
+      prompt += `\n\n## MCP Tools (call by exact name)\n${mcpTools.map(t => `- ${t.name}: ${t.description}`).join('\n')}`
     }
 
     const allAgents = [...getBuiltinAgents(), ...this.projectAgents]
@@ -294,6 +396,9 @@ export class Orchestrator {
     const MAX_ITERATIONS = 20
 
     for (let i = 0; i < MAX_ITERATIONS; i++) {
+      this.drainSteering(allMessages)
+      await this.fitContext(allMessages)
+
       const response = await this.llm.chat(allMessages)
       const toolCalls = this.parseToolCalls(response)
 
@@ -400,10 +505,27 @@ export class Orchestrator {
         const results = await searchFiles(call.args.query, this.context.cwd)
         return { edits, output: `Found ${results.length} files:\n${results.slice(0, 20).join('\n')}` }
       }
+      case 'ask_user': {
+        const options = String(call.args.options || '').split('|').map(o => o.trim()).filter(Boolean)
+        const answer = await this.askUser(String(call.args.question || 'Please clarify'), options)
+        return { edits, output: `User answered: ${answer}` }
+      }
+      case 'skill': {
+        const skill = this.skills.find(s => s.name.toLowerCase() === String(call.args.name || '').toLowerCase())
+        if (!skill) {
+          return { edits, output: `Skill not found. Available: ${this.skills.map(s => s.name).join(', ') || 'none'}` }
+        }
+        info(`Loaded skill: ${skill.name}`)
+        return { edits, output: `<skill name="${skill.name}">\n${skill.instructions}\n</skill>` }
+      }
       case 'done': {
         return { edits, output: `Task complete: ${call.args.summary}` }
       }
       default: {
+        if (call.name.includes('__') && mcpClient.isConnected()) {
+          const output = await mcpClient.callTool(call.name, call.args)
+          return { edits, output }
+        }
         // Check plugin tools
         const pluginTools = getPluginTools()
         const pluginTool = pluginTools.find(t => t.name === call.name)
@@ -426,6 +548,18 @@ export class Orchestrator {
         return { edits, output: `Unknown tool: ${call.name}` }
       }
     }
+  }
+
+  private askUser(question: string, options: string[]): Promise<string> {
+    return new Promise(resolve => {
+      const rl = createInterface({ input: process.stdin, output: process.stdout })
+      const opts = options.length > 0 ? `\n${options.map((o, i) => `  ${i + 1}. ${o}`).join('\n')}` : ''
+      rl.question(`\n? ${question}${opts}\n> `, answer => {
+        rl.close()
+        const num = parseInt(answer, 10)
+        resolve(options[num - 1] || answer)
+      })
+    })
   }
 
   // --- JSON Plan Mode (fallback) ---
