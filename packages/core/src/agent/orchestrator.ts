@@ -420,10 +420,11 @@ export class Orchestrator {
         const sig = Object.keys(params).map(p => `${p}${required.includes(p) ? '' : '?'}: ${params[p]?.type || 'any'}`).join(', ')
         return `- ${t.function.name}(${sig}): ${t.function.description}`
       }).join('\n')
+      const isWin = process.platform === 'win32'
       prompt += `
 
 ## Tools
-You work in ${this.context.cwd}. To call a tool, include a fenced block in your reply exactly like:
+You are running on ${process.platform}${isWin ? ' (Windows — cmd.exe). NEVER use Unix-only commands like head, tail, grep, ls, cat, rm; Windows equivalents: findstr, dir, type, del, Select-String in PowerShell. Prefer the file tools (read_files, search_code) over shell commands whenever possible.' : ''}. To call a tool, include a fenced block in your reply exactly like:
 \`\`\`tool
 {"name": "tool_name", "args": {"param": "value"}}
 \`\`\`
