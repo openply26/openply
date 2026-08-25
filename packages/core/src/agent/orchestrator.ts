@@ -492,12 +492,45 @@ ${toolDocs}`
     const allMessages = [...messages]
     const MAX_ITERATIONS = 20
 
+    let printing = true
+    let tail = ''
+    let streamedAny = false
+    const streamFilter = (token: string) => {
+      tail = (tail + token).slice(-12)
+      if (printing) {
+        if (tail.includes('```tool') || tail.includes('```json')) {
+          const idx = Math.max(tail.lastIndexOf('```tool'), tail.lastIndexOf('```json'))
+          const visible = tail.slice(0, idx)
+          const consumed = tail.slice(idx)
+          if (visible) process.stdout.write(visible)
+          tail = consumed
+          printing = false
+          return
+        }
+        process.stdout.write(token)
+        streamedAny = true
+        tail = tail.slice(-12)
+      } else if (tail.includes('```')) {
+        printing = true
+        tail = ''
+      }
+    }
+
     for (let i = 0; i < MAX_ITERATIONS; i++) {
       this.drainSteering(allMessages)
       await this.fitContext(allMessages)
 
-      const response = await this.llm.chat(allMessages)
+      printing = true
+      tail = ''
+      streamedAny = false
+      const response = await this.llm.chat(allMessages, streamFilter)
+      if (streamedAny) process.stdout.write('\n')
       const toolCalls = this.parseToolCalls(response)
+
+      if (toolCalls.length === 0) {
+        if (!streamedAny) console.log(response)
+        break
+      }
 
       if (toolCalls.length === 0) {
         console.log(response)
@@ -524,6 +557,7 @@ ${toolDocs}`
         })
 
         if (call.name === 'done') {
+          if (call.args.summary) console.log(`\n${call.args.summary}`)
           return { edits, review: edits.length > 0 ? await this.reviewChanges(edits) : null }
         }
       }
