@@ -50,7 +50,7 @@ export default function VSCodeInstall() {
             GitHub Releases
           </a>
           <a
-            href="https://github.com/openply26/openply/releases/latest/download/openply-vscode-0.3.0.vsix"
+            href="https://github.com/openply26/openply/releases/latest/download/openply-vscode-0.4.0.vsix"
             target="_blank"
             rel="noopener noreferrer"
             className="group flex h-[44px] sm:h-[48px] items-center justify-center gap-2 sm:gap-2.5 rounded-xl bg-gradient-to-r from-[#00e5ff] to-[#5c7cfa] px-5 sm:px-7 text-[13px] sm:text-sm font-semibold text-[#06060e] transition-all duration-300 hover:shadow-[0_4px_24px_rgba(0,229,255,0.2)] hover:scale-[1.02] active:scale-[0.98]"
@@ -61,9 +61,9 @@ export default function VSCodeInstall() {
         </div>
 
         {/* Code actions */}
-        <div className="mx-auto mt-8 sm:mt-10 max-w-sm sm:max-w-[560px] text-center sm:text-left rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-6">
+        <div className="mx-auto mt-8 sm:mt-10 max-w-sm sm:max-w-[560px] text-center rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-6">
           <div className="text-[10px] font-semibold uppercase tracking-widest text-[#5a5a8a] mb-3 sm:mb-4">Right-click code for</div>
-          <div className="flex flex-col items-center sm:grid sm:items-start sm:grid-cols-1 lg:grid-cols-2 gap-2.5 sm:gap-2.5">
+          <div className="flex flex-col items-center sm:grid sm:justify-items-center sm:grid-cols-1 lg:grid-cols-2 gap-2.5 sm:gap-2.5">
             {[
               'Explain this code',
               'Refactor this code',
@@ -72,7 +72,7 @@ export default function VSCodeInstall() {
               'Toggle Plan/Build',
               'Select model',
             ].map((action) => (
-              <div key={action} className="flex items-center justify-center sm:justify-start gap-2.5 text-[13px] text-[#8888b0]">
+              <div key={action} className="flex items-center justify-center gap-2.5 text-[13px] text-[#8888b0]">
                 <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[rgba(0,229,255,0.08)] text-[9px] text-[#00e5ff]">→</span>
                 {action}
               </div>

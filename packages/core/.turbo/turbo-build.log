@@ -1,6 +1,6 @@
 
-> @openply/core@0.3.0 build
-> tsup src/index.ts --format cjs,esm --dts --outDir dist
+> @openply/core@0.4.0 build
+> tsup src/index.ts --format cjs,esm --dts --outDir dist --external better-sqlite3
 
 [34mCLI[39m Building entry: src/index.ts
 [34mCLI[39m Using tsconfig: ..\..\tsconfig.json
@@ -8,16 +8,11 @@
 [34mCLI[39m Target: es2022
 [34mCJS[39m Build start
 [34mESM[39m Build start
-[32mESM[39m [1mdist\index.mjs [22m[32m779.19 KB[39m
-[32mESM[39m ⚡️ Build success in 372ms
-[32mCJS[39m [1mdist\index.js [22m[32m782.56 KB[39m
-[32mCJS[39m ⚡️ Build success in 374ms
+[32mCJS[39m [1mdist\index.js [22m[32m815.68 KB[39m
+[32mCJS[39m ⚡️ Build success in 296ms
+[32mESM[39m [1mdist\index.mjs [22m[32m811.44 KB[39m
+[32mESM[39m ⚡️ Build success in 297ms
 [34mDTS[39m Build start
-[32mDTS[39m ⚡️ Build success in 3526ms
-[32mDTS[39m [1mdist\index.d.ts  [22m[32m10.73 KB[39m
-[32mDTS[39m [1mdist\index.d.mts [22m[32m10.73 KB[39m
-npm notice
-npm notice New major version of npm available! 10.9.3 -> 12.0.1
-npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.1
-npm notice To update run: npm install -g npm@12.0.1
-npm notice
+[32mDTS[39m ⚡️ Build success in 9951ms
+[32mDTS[39m [1mdist\index.d.ts  [22m[32m14.36 KB[39m
+[32mDTS[39m [1mdist\index.d.mts [22m[32m14.36 KB[39m
