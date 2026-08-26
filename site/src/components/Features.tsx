@@ -1,53 +1,104 @@
+import { useRef, type MouseEvent } from 'react'
+import { motion } from 'framer-motion'
+
 const FEATURES = [
-  { icon: '🔒', color: '#00e5ff', title: 'Local-first privacy', desc: 'Your code never leaves your machine. Runs on Ollama locally, or use cloud models via OpenRouter/OpenAI/Anthropic.' },
-  { icon: '🧠', color: '#5c7cfa', title: 'Multi-agent mesh', desc: 'Not a single LLM call — a mesh of specialized agents (Planner, Editor, Explorer, Debugger, Reviewer) collaborate.' },
-  { icon: '🔌', color: '#9775fa', title: 'MCP Server', desc: 'Expose openPly as tools for Claude Desktop, Cursor, and other MCP clients. Your agents become available everywhere.' },
-  { icon: '🧩', color: '#fcc419', title: 'Plugin system', desc: 'Extend with npm plugins. Add custom agents, tools, and lifecycle hooks. Discover from .openply/plugins/.' },
-  { icon: '👥', color: '#51cf66', title: 'Collaborative editing', desc: 'Multi-user WebSocket sessions with cursor presence. See teammates cursors in real-time. Share and chat.' },
-  { icon: '🎨', color: '#ff6b9d', title: 'Design Partner', desc: '17 design modes — audit, recolor, redesign, typeset, accessibility, responsive, dark mode, motion, tokens.' },
-  { icon: '🔧', color: '#00e5ff', title: 'Pro Dev Tools', desc: 'Grep search, web search, terminal, file editor, code viewer, diff viewer, todo tracking — all built in.' },
-  { icon: '⚡', color: '#5c7cfa', title: 'Function calling', desc: 'Agents use structured tool calls for reliable execution. Retry with fallback chains. Streaming responses.' },
-  { icon: '📋', color: '#9775fa', title: 'Slash commands', desc: '/help, /model, /agent, /mode, /search, /web, /todo, /checkpoint, /undo, /design, /share, /export.' },
-  { icon: '🔄', color: '#51cf66', title: 'Checkpoints & Undo', desc: 'Auto-save before every response. Undo to any checkpoint. Full session rewind with one keystroke.' },
-  { icon: '🌐', color: '#fcc419', title: 'Live model catalog', desc: 'OpenRouter 200+ models with live pricing and context sizes, plus OpenAI, Anthropic and Ollama. Free models included. Switch per session.' },
-  { icon: '📤', color: '#ff6b9d', title: 'Share & export', desc: 'Share sessions via link. Export as Markdown. Collaboration-ready with shareable session snapshots.' },
+  { icon: '🔒', title: 'Local-first privacy', desc: 'Your code never leaves your machine. Ollama locally or cloud via OpenRouter. No training on your data, ever.', color: '#4ade80' },
+  { icon: '🧠', title: 'Multi-agent mesh', desc: 'Planner, Editor, Explorer, Debugger, Reviewer — specialized agents collaborating on every task.', color: '#00e5ff' },
+  { icon: '💬', title: 'Multi-session IDE', desc: 'Independent sessions with own history, agents and models. Persisted and resumable.', color: '#5c7cfa' },
+  { icon: '🎨', title: 'Design Partner', desc: 'Guided design presets — audit, recolor, typeset, accessibility, responsive, dark mode, tokens.', color: '#9775fa' },
+  { icon: '🔌', title: 'MCP support', desc: 'Connect any Model Context Protocol server — browser, filesystem, git, terminal, databases, custom tools.', color: '#fbbf24' },
+  { icon: '🧩', title: 'Plugin system', desc: 'Extend openPly with your own tools and agents. SKILL.md compatible with the Claude ecosystem.', color: '#f472b6' },
+  { icon: '🌐', title: 'Live model catalog', desc: 'Every OpenRouter model with real pricing and context sizes. Ox Alpha free by default.', color: '#22d3ee' },
+  { icon: '💻', title: 'Full web IDE', desc: 'File tree, editor, terminal, git panel, code viewer, checkpoints — all in the browser.', color: '#38bdf8' },
 ]
+
+function GlassCard({ icon, title, desc, color, index }: (typeof FEATURES)[0] & { index: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  const onMove = (e: MouseEvent<HTMLDivElement>) => {
+    const el = ref.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    el.style.setProperty('--mx', `${x}px`)
+    el.style.setProperty('--my', `${y}px`)
+    const rx = ((y / rect.height) - 0.5) * -6
+    const ry = ((x / rect.width) - 0.5) * 6
+    el.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-2px)`
+  }
+
+  const onLeave = () => {
+    const el = ref.current
+    if (!el) return
+    el.style.transform = ''
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.5, delay: (index % 4) * 0.08 }}
+    >
+      <div
+        ref={ref}
+        onMouseMove={onMove}
+        onMouseLeave={onLeave}
+        className="group relative h-full overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.05)] bg-[rgba(13,13,30,0.55)] p-6 backdrop-blur-sm transition-[border-color,box-shadow] duration-300 hover:border-[rgba(255,255,255,0.12)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.45)]"
+        style={{ transformStyle: 'preserve-3d', transition: 'transform 0.25s ease, border-color 0.3s, box-shadow 0.3s' }}
+      >
+        {/* mouse-following light */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          style={{
+            background: `radial-gradient(340px circle at var(--mx, 50%) var(--my, 50%), ${color}14, transparent 65%)`,
+          }}
+        />
+        <div
+          className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-lg"
+          style={{ background: `${color}12`, border: `1px solid ${color}25` }}
+        >
+          {icon}
+        </div>
+        <h3 className="text-base font-bold text-[#e8e8f8]">{title}</h3>
+        <p className="mt-2 text-[13px] leading-relaxed text-[#8888b0]">{desc}</p>
+      </div>
+    </motion.div>
+  )
+}
 
 export default function Features() {
   return (
     <section id="features" className="relative py-20 sm:py-28">
-      <div className="mx-auto max-w-[1100px] px-5 sm:px-8">
-        {/* Section header */}
-        <div className="text-center mb-14 sm:mb-18">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,229,255,0.12)] bg-[rgba(0,229,255,0.04)] px-3.5 py-1 text-xs font-medium text-[#00e5ff] mb-5">
+      <div className="absolute inset-0 grid-pattern opacity-20" aria-hidden="true" />
+      <div className="relative mx-auto max-w-[1100px] px-5 sm:px-8">
+        <div className="mb-14 text-center sm:mb-18">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(92,124,250,0.15)] bg-[rgba(92,124,250,0.06)] px-3.5 py-1 text-xs font-medium text-[#5c7cfa]"
+          >
             Features
-          </div>
-          <h2 className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
-            Why developers choose openPly
-          </h2>
-          <p className="mx-auto mt-4 max-w-[520px] text-base sm:text-lg text-[#5a5a8a] leading-relaxed">
-            Privacy-first, free, extensible, and built with everything you need.
+          </motion.div>
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]"
+          >
+            Everything a developer needs
+          </motion.h2>
+          <p className="mx-auto mt-4 max-w-[520px] text-base sm:text-lg text-[#8888b0] leading-relaxed">
+            Privacy-first, free, and built with everything you need — CLI and web IDE.
           </p>
         </div>
 
-        {/* Feature grid */}
-        <div className="grid gap-3 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 justify-items-center sm:justify-items-stretch">
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((f, i) => (
-            <div
-              key={f.title}
-              className="group relative w-full rounded-2xl border border-[rgba(255,255,255,0.04)] bg-[rgba(15,15,34,0.5)] p-6 sm:p-7 text-center sm:text-left transition-all duration-500 hover:border-[rgba(0,229,255,0.15)] hover:bg-[rgba(15,15,34,0.8)] hover:shadow-[0_8px_40px_rgba(0,0,0,0.3)] hover:-translate-y-1"
-              style={{ animationDelay: `${i * 0.05}s` }}
-            >
-              {/* Icon with glow */}
-              <div className="mx-auto sm:mx-0 mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-lg" style={{ background: `${f.color}10`, border: `1px solid ${f.color}20` }}>
-                {f.icon}
-              </div>
-              <h3 className="text-[15px] font-semibold text-[#e8e8f8] tracking-[-0.01em]">{f.title}</h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-[#5a5a8a]">{f.desc}</p>
-
-              {/* Hover glow */}
-              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(400px at 50% 0%, ${f.color}06 0%, transparent 70%)` }} />
-            </div>
+            <GlassCard key={f.title} {...f} index={i} />
           ))}
         </div>
       </div>

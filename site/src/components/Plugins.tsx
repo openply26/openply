@@ -1,67 +1,36 @@
+import { lazy, Suspense } from 'react'
+const PluginsScene = lazy(() => import('./3d/PluginsScene'))
+
 export default function Plugins() {
   return (
-    <section id="plugins" className="relative py-20 sm:py-28 bg-[rgba(15,15,34,0.3)]">
-      <div className="absolute inset-0 grid-pattern opacity-30" />
-
+    <section id="plugins" className="relative overflow-hidden py-20 sm:py-28">
       <div className="relative mx-auto max-w-[1100px] px-5 sm:px-8">
-        <div className="grid gap-10 sm:gap-14 lg:grid-cols-2 items-center">
-          {/* Left: code block */}
-          <div className="order-2 lg:order-1 relative rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(10,10,28,0.8)] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
-            {/* Title bar */}
-            <div className="flex items-center gap-2 border-b border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.02)] px-3 sm:px-4 py-2.5 sm:py-3">
-              <div className="flex gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57] opacity-60" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e] opacity-60" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#28c840] opacity-60" />
-              </div>
-              <span className="ml-2 font-mono text-[10px] sm:text-[11px] text-[#5a5a8a] truncate">.openply/plugins/docker/index.js</span>
-            </div>
+        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <Suspense fallback={<div className="h-[420px]" />}>
+            <PluginsScene />
+          </Suspense>
 
-            <pre className="p-4 sm:p-6 font-mono text-[11px] sm:text-[13px] leading-[1.7] sm:leading-[1.8] overflow-x-auto">
-              <code>
-                <span className="text-[#5a5a8a]">{'// openPly plugin'}</span>{'\n'}
-                <span className="text-[#c8c8e0]">module.</span><span className="text-[#00e5ff]">exports</span><span className="text-[#c8c8e0]"> = {'{'}</span>{'\n'}
-                <span className="text-[#c8c8e0]">  name: </span><span className="text-[#51cf66]">'docker'</span><span className="text-[#c8c8e0]">,</span>{'\n'}
-                <span className="text-[#c8c8e0]">  version: </span><span className="text-[#51cf66]">'1.0.0'</span><span className="text-[#c8c8e0]">,</span>{'\n'}
-                <span className="text-[#c8c8e0]">  tools: [{'{'}</span>{'\n'}
-                <span className="text-[#c8c8e0]">    name: </span><span className="text-[#51cf66]">'docker_build'</span><span className="text-[#c8c8e0]">,</span>{'\n'}
-                <span className="text-[#c8c8e0]">    description: </span><span className="text-[#51cf66]">'Build Docker image'</span><span className="text-[#c8c8e0]">,</span>{'\n'}
-                <span className="text-[#c8c8e0]">    execute: </span><span className="text-[#9775fa]">async</span><span className="text-[#c8c8e0]"> (args, ctx) =&gt; {'{'}</span>{'\n'}
-                <span className="text-[#c8c8e0]">      </span><span className="text-[#9775fa]">return</span><span className="text-[#c8c8e0]"> ctx.</span><span className="text-[#00e5ff]">exec</span><span className="text-[#c8c8e0]">(</span><span className="text-[#51cf66]">'docker build .'</span><span className="text-[#c8c8e0]">)</span>{'\n'}
-                <span className="text-[#c8c8e0]">    {'}'}</span>{'\n'}
-                <span className="text-[#c8c8e0]">  {'}'}]</span>{'\n'}
-                <span className="text-[#c8c8e0]">{'}'}</span>
-              </code>
-            </pre>
-
-            {/* Ambient glow */}
-            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-[radial-gradient(circle,rgba(0,229,255,0.06)_0%,transparent_70%)] pointer-events-none" />
-          </div>
-
-          {/* Right: content */}
-          <div className="order-1 lg:order-2 text-center sm:text-left">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(0,229,255,0.15)] bg-[rgba(0,229,255,0.05)] px-3.5 py-1 text-xs font-medium text-[#00e5ff] mb-5">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#00e5ff]" />
-              New in v0.5
+          <div>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(167,139,250,0.15)] bg-[rgba(167,139,250,0.06)] px-3.5 py-1 text-xs font-medium text-[#a78bfa]">
+              Plugins
             </div>
             <h2 className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] text-[#e8e8f8]">
-              Plugin system
+              An ecosystem that<br />
+              <span className="gradient-text">orbits around you</span>
             </h2>
-            <p className="mx-auto sm:mx-0 mt-4 text-base sm:text-lg text-[#5a5a8a] leading-relaxed max-w-[34ch] sm:max-w-[480px]">
-              Extend openPly with npm plugins. Add custom agents, tools, and lifecycle hooks.
-              Discovered from <code className="text-[#00e5ff] text-[13px]">.openply/plugins/</code> or installed via npm.
+            <p className="mt-4 max-w-[480px] text-base sm:text-lg leading-relaxed text-[#8888b0]">
+              GitHub, VS Code, databases, browsers — openPly's plugin system connects the tools
+              you already use. Hover the orbit to explore.
             </p>
-
-            {/* Commands */}
-            <div className="mt-6 sm:mt-8 space-y-2.5 sm:space-y-3">
+            <div className="mt-6 space-y-3">
               {[
-                { cmd: 'openply plugin create docker', desc: 'Scaffold a new plugin', color: '#00e5ff' },
-                { cmd: 'openply plugin list', desc: 'Discover installed plugins', color: '#5c7cfa' },
-                { cmd: 'npm i openply-plugin-docker', desc: 'Install an npm plugin', color: '#51cf66' },
+                { t: 'SKILL.md compatible', d: 'Reuse skills from the Claude ecosystem' },
+                { t: 'Custom agents in .agents/', d: 'Define agents as markdown, ship them anywhere' },
+                { t: 'Tool plugins', d: 'Drop-in TypeScript plugins with full tool access' },
               ].map((item) => (
-                <div key={item.cmd} className="rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] px-4 sm:px-5 py-3 sm:py-4 transition-all duration-300 hover:border-[rgba(255,255,255,0.08)]">
-                  <code className="text-[12px] sm:text-[13px] font-mono break-all" style={{ color: item.color }}>{item.cmd}</code>
-                  <div className="mt-1 text-[11px] sm:text-[12px] text-[#5a5a8a]">{item.desc}</div>
+                <div key={item.t} className="rounded-xl border border-[rgba(255,255,255,0.05)] bg-[rgba(13,13,30,0.6)] p-4">
+                  <div className="text-sm font-semibold text-[#e8e8f8]">{item.t}</div>
+                  <div className="mt-0.5 text-xs text-[#8888b0]">{item.d}</div>
                 </div>
               ))}
             </div>
