@@ -22,7 +22,7 @@ export default function VSCodeInstall() {
         </div>
 
         {/* Feature grid */}
-        <Reveal><div className="mx-auto mb-10 sm:mb-12 grid max-w-[720px] gap-2.5 sm:gap-4 grid-cols-2 sm:grid-cols-4">
+        <Reveal variant="blur"><div className="mx-auto mb-10 sm:mb-12 grid max-w-[720px] gap-2.5 sm:gap-4 grid-cols-2 sm:grid-cols-4">
           {[
             { icon: 'ðŸ’¬', label: 'Webview Chat', color: '#00e5ff' },
             { icon: 'ðŸ”', label: 'Explain Code', color: '#5c7cfa' },
@@ -43,7 +43,7 @@ export default function VSCodeInstall() {
         </div></Reveal>
 
         {/* Download buttons */}
-        <Reveal delay={0.1}><div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
+        <Reveal variant="scale" delay={0.1} y={0}><div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
           <a
             href="https://github.com/openply26/openply/releases/latest"
             target="_blank"
@@ -65,7 +65,7 @@ export default function VSCodeInstall() {
         </div></Reveal>
 
         {/* Code actions */}
-        <Reveal delay={0.15}><div className="mx-auto mt-8 sm:mt-10 max-w-[560px] text-center rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-6">
+        <Reveal variant="blur" delay={0.15}><div className="mx-auto mt-8 sm:mt-10 max-w-[560px] text-center rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-6">
           <div className="text-[10px] font-semibold uppercase tracking-widest text-[#5a5a8a] mb-3 sm:mb-4">Right-click code for</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {[

@@ -1,6 +1,6 @@
-import { useState, lazy, Suspense } from 'react'
+﻿import { useState, lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { Check, Copy } from 'lucide-react'
 
 const HeroScene = lazy(() => import('./3d/HeroScene'))
@@ -12,6 +12,9 @@ const fadeUp = {
 
 export default function Hero() {
   const [copied, setCopied] = useState(false)
+  const { scrollY } = useScroll()
+  const copyY = useTransform(scrollY, [0, 600], [0, 120])
+  const copyOpacity = useTransform(scrollY, [0, 500], [1, 0.2])
 
   const copyInstall = async () => {
     try {
@@ -34,7 +37,7 @@ export default function Hero() {
         <div className="absolute top-40 right-1/4 w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle,rgba(92,124,250,0.04)_0%,transparent_70%)] blur-3xl" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-[1100px] px-5 sm:px-8">
+      <motion.div className="relative z-10 mx-auto max-w-[1100px] px-5 sm:px-8" style={{ y: copyY, opacity: copyOpacity }}>
         {/* Badge */}
         <motion.div {...fadeUp} transition={{ duration: 0.6 }} className="text-center mb-8 sm:mb-10">
           <div className="inline-flex flex-wrap justify-center items-center gap-2 sm:gap-2.5 rounded-full border border-[rgba(0,229,255,0.15)] bg-[rgba(10,10,28,0.6)] backdrop-blur-sm px-3 sm:px-5 py-1.5 text-[11px] sm:text-sm font-medium text-[#00e5ff]">
@@ -131,7 +134,7 @@ export default function Hero() {
             </div>
           ))}
         </motion.div>
-      </div>
+      </motion.div>
     </section>
   )
 }

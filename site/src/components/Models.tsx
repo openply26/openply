@@ -1,5 +1,6 @@
-import AnimatedBackground from './AnimatedBackground'
+﻿import AnimatedBackground from './AnimatedBackground'
 import Reveal from './Reveal'
+import { motion } from 'framer-motion'
 
 const MODELS = [
   { name: 'Ox Alpha', provider: 'OpenRouter', tag: 'FREE · 1M ctx', color: '#4ade80' },
@@ -34,17 +35,17 @@ export default function Models() {
         </div>
 
         {/* Model grid */}
-        <Reveal><div className="grid gap-2.5 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-[900px] mx-auto">
+        <div className="grid gap-2.5 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-[900px] mx-auto">
           {MODELS.map((m) => (
-            <div key={m.name} className="group rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-5 text-center transition-all duration-300 hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(10,10,28,0.8)]">
+            <motion.div key={m.name} initial={{ opacity: 0, y: 20, scale: 0.95 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.45, delay: (m.name.length % 5) * 0.07, ease: [0.16, 1, 0.3, 1] }} className="group rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-5 text-center transition-all duration-300 hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(10,10,28,0.8)]">
               <div className="font-mono text-[12px] sm:text-[13px] font-semibold text-[#c8c8e0] break-all">{m.name}</div>
               <div className="mt-1 text-[10px] sm:text-[11px] text-[#5a5a8a]">{m.provider}</div>
               <span className="mt-2 sm:mt-3 inline-block rounded-md px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider" style={{ color: m.color, background: `${m.color}10`, border: `1px solid ${m.color}15` }}>
                 {m.tag}
               </span>
-            </div>
+            </motion.div>
           ))}
-        </div></Reveal>
+        </div>
       </div>
     </section>
   )

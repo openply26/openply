@@ -1,4 +1,5 @@
-﻿import AnimatedBackground from './AnimatedBackground'
+﻿import { motion } from 'framer-motion'
+import AnimatedBackground from './AnimatedBackground'
 import Reveal from './Reveal'
 
 const PLANS = [
@@ -44,10 +45,14 @@ export default function Compare() {
         </div>
 
         {/* Pricing cards */}
-        <Reveal><div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-3 items-start max-w-[960px] mx-auto">
-          {PLANS.map((p) => (
-            <div
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-3 items-start max-w-[960px] mx-auto">
+          {PLANS.map((p, i) => (
+            <motion.div
               key={p.name}
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              whileInView={{ opacity: 1, y: 0, scale: p.featured ? 1.04 : 1 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.6, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] }}
               className={`relative rounded-xl sm:rounded-2xl p-5 sm:p-8 text-center transition-all duration-500 ${
                 p.featured
                   ? 'border border-[rgba(0,229,255,0.2)] bg-[rgba(15,15,34,0.8)] shadow-[0_0_40px_rgba(0,229,255,0.06)] md:scale-[1.04]'
@@ -69,15 +74,15 @@ export default function Compare() {
                 {p.items.map((item) => (
                   <li key={item} className="flex items-center gap-2.5 sm:gap-3 text-[12px] sm:text-[13px] text-[#8888b0]">
                     <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${p.featured ? 'bg-[rgba(0,229,255,0.15)] text-[#00e5ff]' : 'bg-[rgba(255,255,255,0.04)] text-[#5a5a8a]'}`}>
-                      âœ“
+                      ✓
                     </span>
                     {item}
                   </li>
                 ))}
               </ul>
-            </div>
+            </motion.div>
           ))}
-        </div></Reveal>
+        </div>
       </div>
     </section>
   )

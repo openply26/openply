@@ -1,11 +1,11 @@
-import AnimatedBackground from './AnimatedBackground'
+﻿import AnimatedBackground from './AnimatedBackground'
 import Reveal from './Reveal'
 
 export default function TerminalDemo() {
   return (
     <section className="relative flex justify-center px-4 sm:px-8 -mt-4 sm:-mt-8 mb-12 sm:mb-24">
       <AnimatedBackground variant="mixed" />
-      <Reveal>
+      <Reveal variant="zoom" y={0}>
       {/* Ambient glow behind terminal */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[600px] h-[200px] sm:h-[300px] bg-[radial-gradient(ellipse,rgba(0,229,255,0.06)_0%,transparent_70%)] blur-3xl pointer-events-none" />
 

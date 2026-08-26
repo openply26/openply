@@ -5,7 +5,7 @@ export default function Contact() {
   return (
     <section id="contact" className="relative py-16 sm:py-28 bg-[rgba(15,15,34,0.3)]">
       <AnimatedBackground variant="violet" />
-      <Reveal><div className="mx-auto max-w-[1100px] px-4 sm:px-8 text-center">
+      <Reveal variant="scale" y={0}><div className="mx-auto max-w-[1100px] px-4 sm:px-8 text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3.5 py-1 text-xs font-medium text-[#8888b0] mb-5">
           Contact
         </div>
