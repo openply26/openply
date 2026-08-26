@@ -321,30 +321,69 @@ export default function ChatPanel() {
 
         {activeSession.messages.map((m) => {
           const isErr = m.role === 'assistant' && m.content.startsWith('**Error**')
+          if (m.role === 'system') {
+            return (
+              <div key={m.id} className="flex justify-center">
+                <div className="rounded-full border border-warn/15 bg-warn/5 px-4 py-1.5 text-center text-[11px] text-warn/80">
+                  {m.content}
+                </div>
+              </div>
+            )
+          }
+          if (m.role === 'user') {
+            return (
+              <div key={m.id} className="group flex justify-end">
+                <div className="relative max-w-[85%] sm:max-w-[72%]">
+                  <button
+                    onClick={() => copyMessage(m)}
+                    className="absolute -left-7 top-1.5 rounded p-1 text-faint opacity-0 transition-opacity hover:text-text group-hover:opacity-100"
+                    title="Copy"
+                  >
+                    {copiedId === m.id ? <Check size={11} className="text-success" /> : <Copy size={11} />}
+                  </button>
+                  <div className="whitespace-pre-wrap break-words rounded-2xl rounded-br-md border border-accent/20 bg-accent/10 px-4 py-2.5 text-[13.5px] leading-relaxed text-text">
+                    {m.content}
+                  </div>
+                  {m.attachments && m.attachments.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap justify-end gap-1.5">
+                      {m.attachments.map((a) =>
+                        a.kind === 'image' ? (
+                          <a key={a.id} href={a.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-md border border-border hover:border-accent/50">
+                            <img src={a.url} alt={a.name} className="max-h-40 max-w-[200px] object-cover" loading="lazy" />
+                          </a>
+                        ) : (
+                          <a key={a.id} href={a.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-md border border-border bg-bg px-2 py-1 text-[10px] text-muted transition-colors hover:border-accent/40 hover:text-text">
+                            <FileText size={11} className="shrink-0 text-accent" />
+                            <span className="max-w-[150px] truncate">{a.name}</span>
+                          </a>
+                        ),
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          }
           return (
-            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`group max-w-[88%] sm:max-w-[80%] ${
-                m.role === 'user'
-                  ? 'rounded-lg border border-accent/25 bg-accent/5 px-3.5 py-2.5'
-                  : m.role === 'system'
-                    ? 'rounded-lg border border-warn/20 bg-warn/5 px-3.5 py-2.5'
-                    : 'rounded-lg border border-border bg-surface px-3.5 py-2.5'
-              }`}>
-                <div className="mb-1.5 flex items-center gap-1.5 text-[10px] text-faint">
-                  {m.role === 'user' ? <User size={10} /> : m.role === 'system' ? <Terminal size={10} /> : <Bot size={10} className="text-accent" />}
-                  <span className="uppercase tracking-wider">{m.role === 'assistant' ? 'openply' : m.role}</span>
+            <div key={m.id} className="group flex gap-2.5">
+              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-accent to-blue text-[11px] font-bold text-bg">
+                ◈
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex items-center gap-2 text-[10px] text-faint">
+                  <span className="font-semibold uppercase tracking-wider text-muted">openply</span>
                   <span>· {timeAgo(m.timestamp)}</span>
                   <span className="flex-1" />
-                  {(m.role === 'assistant' && isErr) && (
-                    <button onClick={retryChat} className="flex items-center gap-1 rounded px-1 text-faint opacity-0 transition-opacity hover:text-accent group-hover:opacity-100" title="Retry">
+                  {isErr && (
+                    <button onClick={retryChat} className="flex items-center gap-1 rounded px-1 transition-colors hover:text-accent" title="Retry">
                       <RotateCcw size={10} /> retry
                     </button>
                   )}
-                  <button onClick={() => copyMessage(m)} className="rounded p-0.5 text-faint opacity-0 transition-opacity hover:text-text group-hover:opacity-100" title="Copy">
+                  <button onClick={() => copyMessage(m)} className="rounded p-0.5 transition-opacity hover:text-text lg:opacity-0 lg:group-hover:opacity-100" title="Copy">
                     {copiedId === m.id ? <Check size={11} className="text-success" /> : <Copy size={11} />}
                   </button>
                 </div>
-                <div className="prose prose-invert prose-sm max-w-none text-[13px] leading-relaxed [&_pre]:rounded-md [&_pre]:border [&_pre]:border-border [&_pre]:bg-bg [&_pre]:p-3 [&_pre]:text-xs [&_code]:text-accent/90 [&_pre_code]:text-text [&_table]:text-xs [&_a]:text-accent">
+                <div className="prose prose-invert prose-sm max-w-none text-[13.5px] leading-relaxed [&_pre]:rounded-lg [&_pre]:border [&_pre]:border-border [&_pre]:bg-bg [&_pre]:p-3 [&_pre]:text-xs [&_code]:text-accent/90 [&_pre_code]:text-text [&_a]:text-accent [&_table]:w-full [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-border [&_th]:bg-elevated [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:px-2.5 [&_td]:py-1.5 [&_li]:my-0.5 [&_hr]:my-3 [&_hr]:border-border">
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
                     {m.content || ' '}
                   </ReactMarkdown>
@@ -427,16 +466,7 @@ export default function ChatPanel() {
             ))}
           </div>
         )}
-        <div className="flex items-end gap-2 rounded-lg border border-border bg-bg px-3 py-2 transition-colors focus-within:border-accent/50">
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={state.loading}
-            title="Attach files or images"
-            aria-label="Attach files"
-            className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-faint transition-colors hover:bg-elevated hover:text-accent disabled:opacity-40"
-          >
-            <Paperclip size={14} />
-          </button>
+        <div className="relative rounded-2xl border border-border bg-elevated/50 shadow-[0_4px_24px_rgba(0,0,0,0.25)] transition-all duration-200 focus-within:border-accent/45 focus-within:bg-elevated focus-within:shadow-[0_0_0_1px_rgba(0,229,255,0.12),0_8px_32px_rgba(0,0,0,0.35)]">
           <textarea
             ref={inputRef}
             value={input}
@@ -447,28 +477,45 @@ export default function ChatPanel() {
               if (files.length > 0) { e.preventDefault(); addFiles(files) }
             }}
             rows={1}
-            placeholder={state.loading ? 'Generating…' : 'Ask something — Enter to send, Shift+Enter for newline, / for commands'}
-            className="max-h-40 min-h-[28px] flex-1 resize-none self-center bg-transparent py-1 text-[13px] text-text placeholder-faint outline-none disabled:opacity-60"
+            placeholder={state.loading ? 'Generating…' : 'Ask anything about your code…'}
+            className="max-h-40 w-full resize-none bg-transparent px-4 pb-10 pt-3.5 pr-14 text-[13.5px] leading-relaxed text-text placeholder:text-faint/70 outline-none disabled:opacity-60"
             disabled={state.loading}
           />
-          {state.loading ? (
+          <div className="absolute bottom-2.5 left-3.5 flex items-center gap-2">
             <button
-              onClick={stopChat}
-              title="Stop generating"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-danger/15 text-danger transition-colors hover:bg-danger/25"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={state.loading}
+              title="Attach files or images"
+              aria-label="Attach files"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-faint transition-colors hover:bg-white/5 hover:text-accent disabled:opacity-40"
             >
-              <Square size={13} />
+              <Paperclip size={14} />
             </button>
-          ) : (
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() && pendingFiles.length === 0}
-              title="Send"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent text-bg transition-all hover:brightness-110 disabled:opacity-30"
-            >
-              <Send size={13} />
-            </button>
-          )}
+            <span className="hidden text-[10px] text-faint/70 sm:inline">
+              <kbd className="font-mono">Enter</kbd> send · <kbd className="font-mono">Shift+Enter</kbd> newline · <kbd className="font-mono text-accent/70">/</kbd> commands
+            </span>
+          </div>
+          <div className="absolute bottom-2 right-2.5">
+            {state.loading ? (
+              <button
+                onClick={stopChat}
+                title="Stop generating"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-danger/15 text-danger transition-all hover:bg-danger/30 hover:scale-105"
+              >
+                <Square size={12} />
+              </button>
+            ) : (
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() && pendingFiles.length === 0}
+                title="Send"
+                aria-label="Send message"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-accent to-blue text-bg shadow-[0_2px_12px_rgba(0,229,255,0.3)] transition-all hover:brightness-110 hover:scale-105 disabled:from-faint/30 disabled:to-faint/30 disabled:shadow-none disabled:opacity-40"
+              >
+                <Send size={13} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
