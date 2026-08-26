@@ -17,21 +17,21 @@ export default function VSCodeInstall() {
             Code in your editor
           </h2>
           <p className="mx-auto mt-4 max-w-[520px] text-base sm:text-lg text-[#5a5a8a] leading-relaxed">
-            Webview chat, code actions, diagnostics fix, model switching â€” all inside VS Code.
+            Webview chat, code actions, diagnostics fix, model switching — all inside VS Code.
           </p>
         </div>
 
         {/* Feature grid */}
         <Reveal variant="blur"><div className="mx-auto mb-10 sm:mb-12 grid max-w-[720px] gap-2.5 sm:gap-4 grid-cols-2 sm:grid-cols-4">
           {[
-            { icon: 'ðŸ’¬', label: 'Webview Chat', color: '#00e5ff' },
-            { icon: 'ðŸ”', label: 'Explain Code', color: '#5c7cfa' },
-            { icon: 'âœï¸', label: 'Refactor', color: '#9775fa' },
-            { icon: 'ðŸ§ª', label: 'Add Tests', color: '#51cf66' },
-            { icon: 'ðŸ”§', label: 'Fix Issues', color: '#ff6b6b' },
-            { icon: 'âš¡', label: 'Mode Toggle', color: '#fcc419' },
-            { icon: 'ðŸ¤–', label: 'Model Switch', color: '#00e5ff' },
-            { icon: 'ðŸ“Š', label: 'Status Bar', color: '#5c7cfa' },
+            { icon: '💬', label: 'Webview Chat', color: '#00e5ff' },
+            { icon: '🔍', label: 'Explain Code', color: '#5c7cfa' },
+            { icon: '✏️', label: 'Refactor', color: '#9775fa' },
+            { icon: '🧪', label: 'Add Tests', color: '#51cf66' },
+            { icon: '🔧', label: 'Fix Issues', color: '#ff6b6b' },
+            { icon: '⚡', label: 'Mode Toggle', color: '#fcc419' },
+            { icon: '🤖', label: 'Model Switch', color: '#00e5ff' },
+            { icon: '📊', label: 'Status Bar', color: '#5c7cfa' },
           ].map((item) => (
             <div key={item.label} className="group rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 text-center transition-all duration-300 hover:border-[rgba(255,255,255,0.08)]">
               <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-lg text-lg" style={{ background: `${item.color}10` }}>
@@ -77,7 +77,7 @@ export default function VSCodeInstall() {
               'Select model',
             ].map((action) => (
               <div key={action} className="flex items-center justify-center gap-2.5 text-[13px] text-[#8888b0]">
-                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[rgba(0,229,255,0.08)] text-[9px] text-[#00e5ff]">â†’</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[rgba(0,229,255,0.08)] text-[9px] text-[#00e5ff]">→</span>
                 {action}
               </div>
             ))}

@@ -1,4 +1,4 @@
-﻿import AnimatedBackground from './AnimatedBackground'
+import AnimatedBackground from './AnimatedBackground'
 import Reveal from './Reveal'
 
 export default function Contact() {
@@ -13,7 +13,7 @@ export default function Contact() {
           Get in touch
         </h2>
         <p className="mx-auto mt-3 sm:mt-4 max-w-[420px] text-sm sm:text-lg text-[#5a5a8a]">
-          Questions, feedback, or sponsorship â€” we&apos;d love to hear from you.
+          Questions, feedback, or sponsorship — we&apos;d love to hear from you.
         </p>
         <a
           href="mailto:openply26@gmail.com"
