@@ -1,6 +1,10 @@
+﻿import AnimatedBackground from './AnimatedBackground'
+import Reveal from './Reveal'
+
 export default function VSCodeInstall() {
   return (
     <section id="install" className="relative py-20 sm:py-28 bg-[rgba(15,15,34,0.3)]">
+      <AnimatedBackground variant="cyan" />
       <div className="absolute inset-0 grid-pattern opacity-30" />
 
       <div className="relative mx-auto max-w-[1100px] px-5 sm:px-8">
@@ -13,21 +17,21 @@ export default function VSCodeInstall() {
             Code in your editor
           </h2>
           <p className="mx-auto mt-4 max-w-[520px] text-base sm:text-lg text-[#5a5a8a] leading-relaxed">
-            Webview chat, code actions, diagnostics fix, model switching — all inside VS Code.
+            Webview chat, code actions, diagnostics fix, model switching â€” all inside VS Code.
           </p>
         </div>
 
         {/* Feature grid */}
-        <div className="mx-auto mb-10 sm:mb-12 grid max-w-[720px] gap-2.5 sm:gap-4 grid-cols-2 sm:grid-cols-4">
+        <Reveal><div className="mx-auto mb-10 sm:mb-12 grid max-w-[720px] gap-2.5 sm:gap-4 grid-cols-2 sm:grid-cols-4">
           {[
-            { icon: '💬', label: 'Webview Chat', color: '#00e5ff' },
-            { icon: '🔍', label: 'Explain Code', color: '#5c7cfa' },
-            { icon: '✏️', label: 'Refactor', color: '#9775fa' },
-            { icon: '🧪', label: 'Add Tests', color: '#51cf66' },
-            { icon: '🔧', label: 'Fix Issues', color: '#ff6b6b' },
-            { icon: '⚡', label: 'Mode Toggle', color: '#fcc419' },
-            { icon: '🤖', label: 'Model Switch', color: '#00e5ff' },
-            { icon: '📊', label: 'Status Bar', color: '#5c7cfa' },
+            { icon: 'ðŸ’¬', label: 'Webview Chat', color: '#00e5ff' },
+            { icon: 'ðŸ”', label: 'Explain Code', color: '#5c7cfa' },
+            { icon: 'âœï¸', label: 'Refactor', color: '#9775fa' },
+            { icon: 'ðŸ§ª', label: 'Add Tests', color: '#51cf66' },
+            { icon: 'ðŸ”§', label: 'Fix Issues', color: '#ff6b6b' },
+            { icon: 'âš¡', label: 'Mode Toggle', color: '#fcc419' },
+            { icon: 'ðŸ¤–', label: 'Model Switch', color: '#00e5ff' },
+            { icon: 'ðŸ“Š', label: 'Status Bar', color: '#5c7cfa' },
           ].map((item) => (
             <div key={item.label} className="group rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 text-center transition-all duration-300 hover:border-[rgba(255,255,255,0.08)]">
               <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-lg text-lg" style={{ background: `${item.color}10` }}>
@@ -36,10 +40,10 @@ export default function VSCodeInstall() {
               <div className="text-[12px] font-medium text-[#c8c8e0]">{item.label}</div>
             </div>
           ))}
-        </div>
+        </div></Reveal>
 
         {/* Download buttons */}
-        <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
+        <Reveal delay={0.1}><div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
           <a
             href="https://github.com/openply26/openply/releases/latest"
             target="_blank"
@@ -58,10 +62,10 @@ export default function VSCodeInstall() {
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29L8.95 8.342 4.703 4.852a.75.75 0 0 0-.977 0L.635 7.188a.748.748 0 0 0 0 1.146l3.975 3.157-3.975 3.157a.748.748 0 0 0 0 1.146l3.091 2.336a.75.75 0 0 0 .977 0l4.247-3.49 7.555 7.541a1.494 1.494 0 0 0 1.705.29l4.94-2.377A1.5 1.5 0 0 0 24 18.22V5.78a1.5 1.5 0 0 0-.85-3.193zM17.38 17.628l-6-6 6-6v12z"/></svg>
             Download .vsix
           </a>
-        </div>
+        </div></Reveal>
 
         {/* Code actions */}
-        <div className="mx-auto mt-8 sm:mt-10 max-w-[560px] text-center rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-6">
+        <Reveal delay={0.15}><div className="mx-auto mt-8 sm:mt-10 max-w-[560px] text-center rounded-xl border border-[rgba(255,255,255,0.04)] bg-[rgba(10,10,28,0.6)] p-4 sm:p-6">
           <div className="text-[10px] font-semibold uppercase tracking-widest text-[#5a5a8a] mb-3 sm:mb-4">Right-click code for</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {[
@@ -73,12 +77,12 @@ export default function VSCodeInstall() {
               'Select model',
             ].map((action) => (
               <div key={action} className="flex items-center justify-center gap-2.5 text-[13px] text-[#8888b0]">
-                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[rgba(0,229,255,0.08)] text-[9px] text-[#00e5ff]">→</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[rgba(0,229,255,0.08)] text-[9px] text-[#00e5ff]">â†’</span>
                 {action}
               </div>
             ))}
           </div>
-        </div>
+        </div></Reveal>
       </div>
     </section>
   )

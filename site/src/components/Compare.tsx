@@ -1,3 +1,6 @@
+﻿import AnimatedBackground from './AnimatedBackground'
+import Reveal from './Reveal'
+
 const PLANS = [
   {
     name: 'Claude Code',
@@ -25,6 +28,7 @@ const PLANS = [
 export default function Compare() {
   return (
     <section className="relative py-16 sm:py-28">
+      <AnimatedBackground variant="violet" />
       <div className="mx-auto max-w-[1100px] px-4 sm:px-8">
         {/* Section header */}
         <div className="text-center mb-10 sm:mb-18">
@@ -40,7 +44,7 @@ export default function Compare() {
         </div>
 
         {/* Pricing cards */}
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-3 items-start max-w-[960px] mx-auto">
+        <Reveal><div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-3 items-start max-w-[960px] mx-auto">
           {PLANS.map((p) => (
             <div
               key={p.name}
@@ -65,7 +69,7 @@ export default function Compare() {
                 {p.items.map((item) => (
                   <li key={item} className="flex items-center gap-2.5 sm:gap-3 text-[12px] sm:text-[13px] text-[#8888b0]">
                     <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${p.featured ? 'bg-[rgba(0,229,255,0.15)] text-[#00e5ff]' : 'bg-[rgba(255,255,255,0.04)] text-[#5a5a8a]'}`}>
-                      ✓
+                      âœ“
                     </span>
                     {item}
                   </li>
@@ -73,7 +77,7 @@ export default function Compare() {
               </ul>
             </div>
           ))}
-        </div>
+        </div></Reveal>
       </div>
     </section>
   )

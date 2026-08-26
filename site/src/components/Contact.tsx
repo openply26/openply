@@ -1,7 +1,11 @@
+﻿import AnimatedBackground from './AnimatedBackground'
+import Reveal from './Reveal'
+
 export default function Contact() {
   return (
     <section id="contact" className="relative py-16 sm:py-28 bg-[rgba(15,15,34,0.3)]">
-      <div className="mx-auto max-w-[1100px] px-4 sm:px-8 text-center">
+      <AnimatedBackground variant="violet" />
+      <Reveal><div className="mx-auto max-w-[1100px] px-4 sm:px-8 text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3.5 py-1 text-xs font-medium text-[#8888b0] mb-5">
           Contact
         </div>
@@ -9,7 +13,7 @@ export default function Contact() {
           Get in touch
         </h2>
         <p className="mx-auto mt-3 sm:mt-4 max-w-[420px] text-sm sm:text-lg text-[#5a5a8a]">
-          Questions, feedback, or sponsorship — we&apos;d love to hear from you.
+          Questions, feedback, or sponsorship â€” we&apos;d love to hear from you.
         </p>
         <a
           href="mailto:openply26@gmail.com"
@@ -24,7 +28,7 @@ export default function Contact() {
         <p className="mt-3 sm:mt-4 text-[11px] sm:text-[12px] text-[#5a5a8a]">
           Response time: usually within 24 hours
         </p>
-      </div>
+      </div></Reveal>
     </section>
   )
 }
